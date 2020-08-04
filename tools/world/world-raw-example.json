@@ -1,0 +1,41 @@
+{
+    "minServerVersion": "1.0.0",
+    "homepage": "",
+    "platforms": [{
+        "name": "aistudio",
+        "token": {
+            "expiresAt": "2020-08-12T00:00:00Z",
+            "dataEncryptKeyPrefix": "xxxx"
+        },
+        "oss": {
+            "bucket": "ikatago-aistudio",
+            "bucketEndpoint": "https://ikatago-aistudio.oss-cn-beijing.aliyuncs.com",
+            "data": {
+                "user": {
+                    "accessKey": "xxxx",
+                    "accessSecret": "xxxxx"
+                }
+            }
+        }
+    }, 
+    {
+        "name": "colab",
+        "token": {
+            "expiresAt": "2020-08-12T00:00:00Z",
+            "dataEncryptKeyPrefix": "xxxx"
+        },
+        
+        "oss": {
+            "bucket": "ikatago-colab",
+            "bucketEndpoint": "https://ikatago-colab.oss-cn-beijing.aliyuncs.com",
+            "data": {
+                "user": {
+                    "accessKey": "xxxx",
+                    "accessSecret": "xxx"
+                }
+            }
+        }
+    }]
+}
+
+

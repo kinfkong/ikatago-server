@@ -7,7 +7,6 @@ import (
 
 func main() {
 	go sshd.Run()
-	//  ssh -p 10020 akv100kt6@gpu61.mistgpu.com
 	natProvider := &nat.Knat{
 		SSHHost:     "120.53.123.43",
 		SSHPort:     22,
