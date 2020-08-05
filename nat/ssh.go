@@ -22,7 +22,7 @@ type SSHNatProvider struct {
 	LocalPort  int `json:"local_port"`
 }
 
-var _ Provider = (&SSHNatProvider{})
+//var _ Provider = (&SSHNatProvider{})
 
 // Run runs the nat service
 func (nat *SSHNatProvider) Run() error {
@@ -45,7 +45,7 @@ func (nat *SSHNatProvider) Run() error {
 		return err
 	}
 	defer conn.Close()
-	
+
 	// Listen on remote server port
 	listener, err := conn.Listen("tcp", remoteAddr)
 	if err != nil {
