@@ -6,13 +6,16 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jessevdk/go-flags"
 	"github.com/kinfkong/ikatago-server/config"
+	"github.com/kinfkong/ikatago-server/model"
 	"github.com/kinfkong/ikatago-server/nat"
 	"github.com/kinfkong/ikatago-server/platform"
 	"github.com/kinfkong/ikatago-server/sshd"
+	"github.com/kinfkong/ikatago-server/storage"
 	"github.com/kinfkong/ikatago-server/utils"
 )
 
@@ -20,7 +23,7 @@ var opts struct {
 	World         *string `short:"w" long:"world" description:"The world url."`
 	Platform      string  `short:"p" long:"platform" description:"The platform, like aistudio, colab" required:"true"`
 	PlatformToken string  `short:"t" long:"token" description:"The token of the platform, like aistudio, colab" required:"true"`
-	ConfigFile    *string `short:"c" long:"config" description:"The config file of the server (not katago config file)"`
+	ConfigFile    *string `short:"c" long:"config" description:"The config file of the server (not katago config file)" default:"./config/conf.yaml"`
 }
 
 func getPlatformFromWorld() (*platform.Platform, error) {
@@ -108,21 +111,54 @@ func parseArgs() {
 
 func main() {
 	parseArgs()
-	_, err := getPlatformFromWorld()
+	platform, err := getPlatformFromWorld()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	go sshd.Run()
-	/*natProvider := &nat.Knat{
-		SSHHost:     "120.53.123.43",
-		SSHPort:     8203,
-		SSHUsername: "nat",
-		SSHPassword: "IamsureKKNo.1",
-		LocalPort:   2222,
+	err = sshd.RunAsync()
+	if err != nil {
+		log.Fatal(err)
 	}
-	*/
-	natProvider := &nat.FRP{}
-	natProvider.Run()
 
+	natProvider := &nat.FRP{}
+	err = natProvider.RunAsync()
+	if err != nil {
+		log.Fatal(err)
+	}
+	sshInfo, err := natProvider.GetInfo()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// upload the users
+	oss := storage.Oss{
+		BucketEndpoint:  platform.Oss.BucketEndpoint,
+		BucketName:      platform.Oss.Bucket,
+		AccessKeyId:     platform.Oss.Data.User.AccessKey,
+		AccessKeySecret: platform.Oss.Data.User.AccessSecret,
+	}
+	oss.Init()
+	for _, sshUser := range sshd.Users {
+		err := oss.SaveUserSSHInfo(model.SSHLoginInfo{
+			Host: sshInfo.Host,
+			Port: sshInfo.Port,
+			User: sshUser.Username,
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	fmt.Printf("\n\n")
+	fmt.Printf("SSH HOST: %s\n", sshInfo.Host)
+	fmt.Printf("SSH PORT: %d\n\n", sshInfo.Port)
+	fmt.Printf("\n")
+
+	fmt.Printf("Congratulations! Now ikatago-server is running successfully, waiting for your requests ...\n\n")
+	fmt.Printf("Hint: Please use ikatago client to connect it in Lizzie, Sabaki, anago... \nClick the follow link for details:\n")
+	fmt.Printf("%s\n", "https://github.com/kinfkong/ikatago-client")
+	for {
+		// wait for the services
+		time.Sleep(1000 * time.Millisecond)
+	}
 }

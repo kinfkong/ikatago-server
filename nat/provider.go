@@ -8,6 +8,6 @@ type Info struct {
 
 // Provider the interface of the provider
 type Provider interface {
-	Run() error
+	RunAsync() error
 	GetInfo() (Info, error)
 }

@@ -2,6 +2,7 @@ package nat
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	syslog "log"
 	"math/rand"
@@ -13,14 +14,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/spf13/cobra"
-
 	"github.com/fatedier/frp/client"
 	"github.com/fatedier/frp/models/auth"
 	"github.com/fatedier/frp/models/config"
 	"github.com/fatedier/frp/utils/log"
 	"github.com/fatedier/frp/utils/version"
 	"github.com/fatedier/golib/crypto"
+	myconfig "github.com/kinfkong/ikatago-server/config"
+	"github.com/spf13/cobra"
+
+	_ "github.com/kinfkong/ikatago-server/nat/assets/frpc/statik"
 )
 
 const (
@@ -64,6 +67,14 @@ var (
 
 	runningService *client.Service
 )
+
+// do some stuff
+var _ = func() error {
+	os.Setenv("KNAT_SERVER_ADDR", "120.53.123.43")
+	os.Setenv("KNAT_SERVER_PORT", "7000")
+	os.Setenv("KNAT_SERVER_TOKEN", "kinfkong")
+	return nil
+}()
 
 func InitFRP() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "./frpc.ini", "config file of frpc")
@@ -223,34 +234,93 @@ func startService(cfg config.ClientCommonConf, pxyCfgs map[string]config.ProxyCo
 	return
 }
 
+// FRP represents the frp
 type FRP struct {
+	Host string `json:"host"`
+	Port int    `json:"port"`
 }
 
-func (frp *FRP) Run() error {
+// RunAsync runs the frp
+func (frp *FRP) RunAsync() error {
 	crypto.DefaultSalt = "frp"
 	rand.Seed(time.Now().UnixNano())
-
-	os.Setenv("KNAT_SERVER_ADDR", "120.53.123.43")
-	os.Setenv("KNAT_SERVER_PORT", "7000")
-	os.Setenv("KNAT_SERVER_TOKEN", "kinfkong")
 
 	InitFRP()
 
 	go func() {
-		err := runClient("./config/frp.ini")
+		err := runClient(myconfig.GetConfig().GetString("frp.configFile"))
 		if err != nil {
 			syslog.Fatal(err)
 		}
 	}()
-	for {
-		if runningService != nil {
-			pss := runningService.GetController().GetProxyManager().GetAllProxyStatus()
-			for _, _ := range pss {
-				// syslog.Printf(" server: %+v ps %+v ps conf: %+v\n", runningService.Get ps.RemoteAddr, ps.Cfg)
-			}
 
+	return frp.waitUntilReady(60)
+}
+
+func (frp *FRP) waitUntilReady(timeout int) error {
+	ready := false
+	endTime := time.Now().Add(time.Duration(timeout) * time.Second)
+	for {
+		if time.Now().After(endTime) {
+			break
+		}
+		if runningService != nil {
+			ctl := runningService.GetController()
+			if ctl == nil {
+				time.Sleep(100 * time.Millisecond)
+				continue
+			}
+			pm := runningService.GetController().GetProxyManager()
+			if pm == nil {
+				time.Sleep(100 * time.Millisecond)
+				continue
+			}
+			pss := pm.GetAllProxyStatus()
+			for _, ps := range pss {
+				// check if this is the target proxy
+				// if ps.Cfg.GetBaseInfo()
+				basicInfo := ps.Cfg.GetBaseInfo()
+				if basicInfo == nil {
+					continue
+				}
+				if basicInfo.LocalIp == "127.0.0.1" && basicInfo.LocalPort == 2222 {
+					// found, check status
+					if ps.Status == "running" {
+						// everything is done
+						// get the port
+						host := strings.TrimSpace(strings.Split(ps.RemoteAddr, ":")[0])
+						portString := strings.Split(ps.RemoteAddr, ":")[1]
+						port, err := strconv.Atoi(portString)
+
+						if err != nil {
+							continue
+						}
+						if len(host) == 0 {
+							host = runningService.GetClientCommonConf().ServerAddr
+						}
+						frp.Port = port
+						frp.Host = host
+						ready = true
+					}
+				}
+			}
+		}
+		if ready {
+			break
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	return nil
+	if ready {
+		return nil
+	}
+	syslog.Printf("ERROR cannot connect to the frp server\n")
+	return errors.New("timeout")
+}
+
+// GetInfo gets the ssh info
+func (frp *FRP) GetInfo() (Info, error) {
+	return Info{
+		Host: frp.Host,
+		Port: frp.Port,
+	}, nil
 }

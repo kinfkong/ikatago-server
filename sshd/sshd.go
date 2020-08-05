@@ -19,6 +19,8 @@ type UserInfo struct {
 	Password string `json:"password"`
 }
 
+var Users []UserInfo
+
 func readUsers(filename string) []UserInfo {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -109,9 +111,9 @@ func runBaiduKatago(args ...string) (*exec.Cmd, error) {
 	return exec.Command("/bin/sh", "-c", "export LD_LIBRARY_PATH=/tmp/l:$LD_LIBRARY_PATH; /tmp/b/k gtp -config ./gtp_example.cfg -model ./weight.bin.gz"), nil
 }
 
-// Run runs the sshd
-func Run() {
-	users := readUsers("./userlist.txt")
+// RunAsync runs the sshd
+func RunAsync() error {
+	Users = readUsers("./userlist.txt")
 	ssh.Handle(func(s ssh.Session) {
 		defer s.Close()
 		cmds := s.Command()
@@ -142,14 +144,18 @@ func Run() {
 	})
 
 	passwordAuthOption := ssh.PasswordAuth(func(ctx ssh.Context, password string) bool {
-		for _, userInfo := range users {
+		for _, userInfo := range Users {
 			if userInfo.Username == ctx.User() && userInfo.Password == password {
 				return true
 			}
 		}
 		return false
 	})
-
-	err := ssh.ListenAndServe(":2222", nil, passwordAuthOption)
-	log.Printf("sshd exit. %+v\n", err)
+	go func() {
+		err := ssh.ListenAndServe(":2222", nil, passwordAuthOption)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	return nil
 }

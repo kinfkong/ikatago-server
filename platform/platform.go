@@ -8,8 +8,8 @@ import (
 	"crypto/cipher"
 	"encoding/hex"
 	"fmt"
-	"github.com/mergermarket/go-pkcs7"
 
+	"github.com/mergermarket/go-pkcs7"
 )
 
 // RAMUser represents the oss bucket of this platform
@@ -17,15 +17,18 @@ type RAMUser struct {
 	AccessKey    string `json:"accessKey"`
 	AccessSecret string `json:"accessSecret"`
 }
+
 // OssData represents the oss data
 type OssData struct {
 	User RAMUser `json:"user"`
-} 
+}
+
 // Oss represents the the oss
 type Oss struct {
-	BucketEndpoint string `json:"bucketEndpoint"`
-	Data          OssData `json:"data"`
-	EncryptedData string `json:"encryptedData"`
+	BucketEndpoint string  `json:"bucketEndpoint"`
+	Bucket         string  `json:"bucket"`
+	Data           OssData `json:"data"`
+	EncryptedData  string  `json:"encryptedData"`
 }
 
 // Platform represents the platform
@@ -70,5 +73,6 @@ func (p *Platform) Decrypt(dataEncryptKeyPrefix string) error {
 	if err != nil {
 		return err
 	}
+	p.Oss.Data = ossData
 	return err
 }
