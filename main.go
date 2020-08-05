@@ -114,12 +114,15 @@ func main() {
 	}
 
 	go sshd.Run()
-	natProvider := &nat.Knat{
+	/*natProvider := &nat.Knat{
 		SSHHost:     "120.53.123.43",
 		SSHPort:     8203,
 		SSHUsername: "nat",
 		SSHPassword: "IamsureKKNo.1",
 		LocalPort:   2222,
 	}
+	*/
+	natProvider := &nat.FRP{}
 	natProvider.Run()
+
 }
