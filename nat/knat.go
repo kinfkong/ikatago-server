@@ -19,6 +19,8 @@ type Knat struct {
 	SSHPassword string `json:"sshPassword"`
 
 	LocalPort int `json:"local_port"`
+	RemotePort int `json:"RemotePort"`
+
 }
 
 func (knat *Knat) fetchRemotePort() (int, error) {
@@ -44,12 +46,10 @@ func (knat *Knat) fetchRemotePort() (int, error) {
 	defer session.Close()
 
 	cmd := fmt.Sprintf("/home/nat/assign-port.sh")
-	log.Printf("DEBUG running commad:%s\n", cmd)
 	output, err := session.Output(cmd)
 	if err != nil {
 		return 0, err
 	}
-	log.Printf("DEBUG fetched port: %s\n", string(output))
 	remotePort, err := strconv.Atoi(strings.TrimSpace(string(output)))
 	if err != nil {
 		return 0, err
@@ -57,19 +57,25 @@ func (knat *Knat) fetchRemotePort() (int, error) {
 	return remotePort, nil
 }
 
-// Run runs the nat service
-func (knat *Knat) Run() error {
+// Prepare do some prepare 
+func (knat *Knat) Prepare() {
 	remotePort, err := knat.fetchRemotePort()
 	if err != nil {
 		log.Fatal("failed to fetch remote port", err)
 	}
+	knat.RemotePort = remotePort
+}
+
+// Run runs the nat service
+func (knat *Knat) Run() error {
+	
 
 	sshProvider := &SSHNatProvider{
 		SSHHost:     knat.SSHHost,
 		SSHPort:     knat.SSHPort,
 		SSHUsername: knat.SSHUsername,
 		SSHPassword: knat.SSHPassword,
-		RemotePort:  remotePort,
+		RemotePort:  knat.RemotePort,
 		LocalPort:   knat.LocalPort,
 	}
 	return sshProvider.Run()

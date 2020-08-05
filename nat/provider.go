@@ -10,4 +10,5 @@ type Info struct {
 type Provider interface {
 	Run() error
 	GetInfo() (Info, error)
+	Prepare() error
 }

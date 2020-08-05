@@ -45,15 +45,15 @@ func (nat *SSHNatProvider) Run() error {
 		return err
 	}
 	defer conn.Close()
-	log.Printf("DEBUG: success to ssh to: %s\n", sshAddr)
+	
 	// Listen on remote server port
 	listener, err := conn.Listen("tcp", remoteAddr)
 	if err != nil {
 		log.Fatalln(fmt.Printf("Listen open port ON remote server error: %s", err))
 	}
 	defer listener.Close()
-	log.Printf("DEBUG: success to create listenning on remote %s\n", remoteAddr)
-
+	log.Printf("DEBUG: success to create listenning on remote %s:%d\n", nat.SSHHost, nat.RemotePort)
+	log.Printf("INFO: Everything is ready, waiting for your requests...")
 	// handle incoming connections on reverse forwarded tunnel
 	for {
 		// Open a (local) connection to localEndpoint whose content will be forwarded so serverEndpoint

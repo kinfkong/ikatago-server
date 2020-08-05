@@ -49,7 +49,6 @@ func readUsers(filename string) []UserInfo {
 			Username: items[0],
 			Password: items[1],
 		})
-		log.Printf("USER: %s\n", items[0])
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -114,6 +113,7 @@ func runBaiduKatago(args ...string) (*exec.Cmd, error) {
 func Run() {
 	users := readUsers("./userlist.txt")
 	ssh.Handle(func(s ssh.Session) {
+		defer s.Close()
 		cmds := s.Command()
 		if len(cmds) == 0 {
 			io.WriteString(s, "No command found.\n")
