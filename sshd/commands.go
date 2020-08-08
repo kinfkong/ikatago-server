@@ -47,7 +47,7 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	} else {
 		io.WriteString(session, fmt.Sprintf("using custom katago config: %s\n", *runKatagoOpts.CustomConfig))
 		// construct the file path
-		theFile := fmt.Sprintf("%s/%s/%s", katagoManager.CustomConfigDir, session.User(), *customConfigFile)
+		theFile := fmt.Sprintf("%s/%s/%s", katagoManager.CustomConfigDir, session.User(), *runKatagoOpts.CustomConfig)
 		customConfigFile = &theFile
 	}
 
