@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/fatedier/beego/utils"
 	"github.com/fatedier/frp/client"
 	"github.com/fatedier/frp/models/auth"
 	"github.com/fatedier/frp/models/config"
@@ -23,6 +24,7 @@ import (
 	myconfig "github.com/kinfkong/ikatago-server/config"
 	"github.com/spf13/cobra"
 
+	// import the blank assets
 	_ "github.com/kinfkong/ikatago-server/nat/assets/frpc/statik"
 )
 
@@ -236,19 +238,38 @@ func startService(cfg config.ClientCommonConf, pxyCfgs map[string]config.ProxyCo
 
 // FRP represents the frp
 type FRP struct {
-	Host string `json:"host"`
-	Port int    `json:"port"`
+	Host       string `json:"host"`
+	Port       int    `json:"port"`
+	configFile string
+}
+
+// InitWithConfig inits from the config
+func (frp *FRP) InitWithConfig(configObject map[string]interface{}) error {
+	frpConfigFile, ok := configObject["config_file"]
+	if !ok {
+		syslog.Printf("ERROR minssing config_file\n")
+		return errors.New("missing_config_File")
+	}
+
+	// check file exists
+	if !utils.FileExists(frpConfigFile.(string)) {
+		syslog.Printf("ERROR config file not found")
+		return errors.New("file_not_found")
+	}
+	frp.configFile = frpConfigFile.(string)
+
+	crypto.DefaultSalt = "frp"
+	rand.Seed(time.Now().UnixNano())
+	InitFRP()
+
+	return nil
 }
 
 // RunAsync runs the frp
 func (frp *FRP) RunAsync() error {
-	crypto.DefaultSalt = "frp"
-	rand.Seed(time.Now().UnixNano())
-
-	InitFRP()
 
 	go func() {
-		err := runClient(myconfig.GetConfig().GetString("frp.configFile"))
+		err := runClient(frp.configFile)
 		if err != nil {
 			syslog.Fatal(err)
 		}
@@ -283,11 +304,12 @@ func (frp *FRP) waitUntilReady(timeout int) error {
 				if basicInfo == nil {
 					continue
 				}
-				if basicInfo.LocalIp == "127.0.0.1" && basicInfo.LocalPort == 2222 {
+				serverListenPort, _ := myconfig.GetServerListenPort()
+				if basicInfo.LocalPort == serverListenPort {
 					// found, check status
 					if ps.Status == "running" {
 						// everything is done
-						// get the port
+						// get the remote port
 						host := strings.TrimSpace(strings.Split(ps.RemoteAddr, ":")[0])
 						portString := strings.Split(ps.RemoteAddr, ":")[1]
 						port, err := strconv.Atoi(portString)

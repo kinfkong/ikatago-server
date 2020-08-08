@@ -116,12 +116,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// start sshd
 	err = sshd.RunAsync()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	natProvider := &nat.FRP{}
+	natProvider, err := nat.GetNatProvider()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	err = natProvider.RunAsync()
 	if err != nil {
 		log.Fatal(err)
@@ -155,8 +160,7 @@ func main() {
 	fmt.Printf("\n")
 
 	fmt.Printf("Congratulations! Now ikatago-server is running successfully, waiting for your requests ...\n\n")
-	fmt.Printf("Hint: Please use ikatago client to connect it in Lizzie, Sabaki, anago... \nClick the follow link for details:\n")
-	fmt.Printf("%s\n", "https://github.com/kinfkong/ikatago-client")
+
 	for {
 		// wait for the services
 		time.Sleep(1000 * time.Millisecond)

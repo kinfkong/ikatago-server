@@ -6,6 +6,7 @@ require (
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.4+incompatible
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/fatedier/beego v0.0.0-20171024143340-6c6a4f5bd5eb
 	github.com/fatedier/frp v0.0.0-00010101000000-000000000000
 	github.com/fatedier/golib v0.0.0-20181107124048-ff8cd814b049
 	github.com/gliderlabs/ssh v0.3.0

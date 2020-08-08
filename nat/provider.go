@@ -8,6 +8,7 @@ type Info struct {
 
 // Provider the interface of the provider
 type Provider interface {
+	InitWithConfig(map[string]interface{}) error
 	RunAsync() error
 	GetInfo() (Info, error)
 }

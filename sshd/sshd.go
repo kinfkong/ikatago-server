@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/gliderlabs/ssh"
+	"github.com/kinfkong/ikatago-server/config"
 )
 
 // UserInfo represents the user info
@@ -19,7 +20,19 @@ type UserInfo struct {
 	Password string `json:"password"`
 }
 
+// Users all the sshd users
 var Users []UserInfo
+
+// SSHCommandHandler the ssh command handler
+type SSHCommandHandler func(...string) (*exec.Cmd, error)
+
+// Handlers all the sshd handlers
+var Handlers map[string]SSHCommandHandler = make(map[string]SSHCommandHandler)
+
+// RegisterCommandHandler registers the command handler
+func RegisterCommandHandler(commandName string, handler SSHCommandHandler) {
+	Handlers[commandName] = handler
+}
 
 func readUsers(filename string) []UserInfo {
 	file, err := os.Open(filename)
@@ -60,60 +73,10 @@ func readUsers(filename string) []UserInfo {
 	return result
 
 }
-func runBaiduKatago(args ...string) (*exec.Cmd, error) {
-	// exec.Command()
-	// 	_, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
-	// decrypte data
-	decryptePassword := "abcde12345"
-	decrypteCommandTemplate := "openssl enc -in %s -d -aes-256-cbc -pass pass:%s > %s"
-
-	output, err := exec.Command("/bin/sh", "-c", "rm -rf /tmp/l && mkdir -p /tmp/l").CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-	output, err = exec.Command("/bin/sh", "-c", "rm -rf /tmp/b && mkdir -p /tmp/b").CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-	output, err = exec.Command("/bin/sh", "-c", fmt.Sprintf(decrypteCommandTemplate, "./data/k", decryptePassword, "/tmp/b/k")).CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-	output, err = exec.Command("/bin/sh", "-c", fmt.Sprintf(decrypteCommandTemplate, "./data/lc", decryptePassword, "/tmp/l/lc")).CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-	output, err = exec.Command("/bin/sh", "-c", fmt.Sprintf(decrypteCommandTemplate, "./data/lc", decryptePassword, "/tmp/l/lz")).CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-
-	output, err = exec.Command("/bin/sh", "-c", "chmod +x /tmp/b/k").CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-	output, err = exec.Command("/bin/sh", "-c", "rm -f /tmp/l/libzip.so.4 && ln -s /tmp/l/lz /tmp/l/libzip.so.4").CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-	output, err = exec.Command("/bin/sh", "-c", "rm -f /tmp/l/libstdc++.so.6 && ln -s /tmp/l/lc /tmp/l/libstdc++.so.6").CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-	return exec.Command("/bin/sh", "-c", "export LD_LIBRARY_PATH=/tmp/l:$LD_LIBRARY_PATH; /tmp/b/k gtp -config ./gtp_example.cfg -model ./weight.bin.gz"), nil
-}
 
 // RunAsync runs the sshd
 func RunAsync() error {
-	Users = readUsers("./userlist.txt")
+	Users = readUsers(config.GetConfig().GetString("users.file"))
 	ssh.Handle(func(s ssh.Session) {
 		defer s.Close()
 		cmds := s.Command()
@@ -121,19 +84,18 @@ func RunAsync() error {
 			io.WriteString(s, "No command found.\n")
 			return
 		}
-		if cmds[0] != "run-katago" {
-			io.WriteString(s, "Only run-katago command is supported.\n")
+		handler, ok := Handlers[cmds[0]]
+		if !ok {
+			io.WriteString(s, fmt.Sprintf("command [%s] is not supported.\n", cmds[0]))
 			return
 		}
 		log.Printf("DEBUG executing cmd: %+v\n", cmds)
-		cmd, err := runBaiduKatago(cmds[1:]...)
-		if err != nil {
+		cmd, err := handler(cmds[1:]...)
+		if err != nil || cmd == nil {
 			io.WriteString(s, fmt.Sprintf("Something error happens...err:%+v\n", err))
 			return
 		}
-		// cmd := exec.Command(cmds[0], cmds[1:]...)
 		cmd.Env = s.Environ()
-		// log.Printf("DEBUG executing cmd with env: %+v\n", cmd.Env)
 		cmd.Stdin = s
 		cmd.Stdout = s
 		cmd.Stderr = s.Stderr()
@@ -152,7 +114,7 @@ func RunAsync() error {
 		return false
 	})
 	go func() {
-		err := ssh.ListenAndServe(":2222", nil, passwordAuthOption)
+		err := ssh.ListenAndServe(config.GetConfig().GetString("server.listen"), nil, passwordAuthOption)
 		if err != nil {
 			log.Fatal(err)
 		}

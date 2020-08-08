@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"moul.io/http2curl"
 )
@@ -47,4 +48,22 @@ func DoHTTPRequest(method string, url string, headers map[string]string, body []
 	}
 
 	return
+}
+
+// FileExists checks if a file exists and is not a directory before we
+func FileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+// DirectoryExists checks if a dir exists and is not a directory before we
+func DirectoryExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return info.IsDir()
 }

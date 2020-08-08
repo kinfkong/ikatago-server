@@ -1,7 +1,10 @@
 package config
 
 import (
+	"errors"
 	"log"
+	"strconv"
+	"strings"
 
 	"github.com/kinfkong/ikatago-server/utils"
 	"github.com/spf13/viper"
@@ -30,4 +33,14 @@ func Init(configFile *string) {
 // GetConfig gets the configuration
 func GetConfig() *viper.Viper {
 	return config
+}
+
+// GetServerListenPort gets the server listen port
+func GetServerListenPort() (int, error) {
+	serverAddr := config.GetString("server.listen")
+	items := strings.Split(serverAddr, ":")
+	if len(items) < 2 {
+		return 0, errors.New("invalid_server_addr")
+	}
+	return strconv.Atoi(items[1])
 }
