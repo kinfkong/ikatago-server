@@ -12,9 +12,10 @@ katago:
   configs:
     - name: 1po
       path: /Users/wangjinggang/gochess/remote/katago_1v.cfg
-  default_bin_name: katago-1.4.5
-  default_weight_name: 20b
-  default_config_name: 1po
+  defaultBinName: katago-1.4.5
+  defaultWeightName: 20b
+  defaultConfigName: 1po
+  customConfigDir: ./data
 
 use_nat: direct
 

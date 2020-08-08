@@ -37,9 +37,10 @@ type Manager struct {
 	Bins              []BinConfig    `json:"bins"`
 	Weights           []WeightConfig `json:"weights"`
 	Configs           []ConfigConfig `json:"configs"`
-	DefaultBinName    string         `json:"default_bin_name"`
-	DefaultWeightName string         `json:"default_weight_name"`
-	DefaultConfigName string         `json:"default_config_name"`
+	DefaultBinName    string         `json:"defaultBinName"`
+	DefaultWeightName string         `json:"defaultWeightName"`
+	DefaultConfigName string         `json:"defaultConfigName"`
+	CustomConfigDir   string         `json:"customConfigDir"`
 }
 
 var managerInstance *Manager

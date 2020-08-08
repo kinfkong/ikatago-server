@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -16,6 +17,7 @@ import (
 func init() {
 	RegisterCommandHandler("run-katago", runKatago)
 	RegisterCommandHandler("query-katago", queryKatago)
+	RegisterCommandHandler("scp-config", copyConfig)
 
 }
 
@@ -67,4 +69,24 @@ func queryKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	io.WriteString(session, fmt.Sprintf("default katago weight: %s\n", katagoManager.DefaultWeightName))
 	io.WriteString(session, fmt.Sprintf("default katago config: %s\n", katagoManager.DefaultConfigName))
 	return nil, nil
+}
+
+func copyConfig(session ssh.Session, args ...string) (*exec.Cmd, error) {
+	if len(args) == 0 {
+		return nil, errors.New("no_target_file_name")
+	}
+	katagoManager := katago.GetManager()
+	outputDir := fmt.Sprintf("%s/%s", katagoManager.CustomConfigDir, session.User())
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+		os.Mkdir(outputDir, os.ModeDir)
+	}
+	outputFile := fmt.Sprintf("%s/%s", outputDir, args[0])
+	f, err := os.Create(outputFile)
+	defer f.Close()
+	_, err = io.Copy(f, session)
+	if err != nil {
+		log.Printf("ERROR failed to read session: %+v\n", err)
+		return nil, err
+	}
+	return exec.Command("echo", "Copy Done!"), nil
 }
