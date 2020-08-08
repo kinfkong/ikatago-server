@@ -23,9 +23,10 @@ func init() {
 }
 
 var runKatagoOpts struct {
-	Name   *string `long:"name" description:"the katago bin name"`
-	Weight *string `long:"weight" description:"the katago weight name"`
-	Config *string `long:"config" description:"the katago config name"`
+	Name         *string `long:"name" description:"the katago bin name"`
+	Weight       *string `long:"weight" description:"the katago weight name"`
+	Config       *string `long:"config" description:"the katago config name"`
+	CustomConfig *string `long:"custom-config" description:"the katago custom config file name"`
 }
 
 func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
@@ -40,8 +41,17 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	binName, weightName, configName := katagoManager.GetCurrentUsingNames(runKatagoOpts.Name, runKatagoOpts.Weight, runKatagoOpts.Config)
 	io.WriteString(session, fmt.Sprintf("using katago name: %s\n", binName))
 	io.WriteString(session, fmt.Sprintf("using katago weight: %s\n", weightName))
-	io.WriteString(session, fmt.Sprintf("using katago config: %s\n", configName))
-	return katago.GetManager().Run(binName, weightName, configName)
+	var customConfigFile *string = nil
+	if runKatagoOpts.CustomConfig == nil {
+		io.WriteString(session, fmt.Sprintf("using katago config: %s\n", configName))
+	} else {
+		io.WriteString(session, fmt.Sprintf("using custom katago config: %s\n", *runKatagoOpts.CustomConfig))
+		// construct the file path
+		theFile := fmt.Sprintf("%s/%s/%s", katagoManager.CustomConfigDir, session.User(), *customConfigFile)
+		customConfigFile = &theFile
+	}
+
+	return katago.GetManager().Run(binName, weightName, configName, customConfigFile)
 }
 
 func outputKataInfo(session ssh.Session) {

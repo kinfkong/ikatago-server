@@ -201,7 +201,7 @@ func (m *Manager) GetCurrentUsingNames(binNamePtr *string, weightNamePtr *string
 }
 
 // Run runs the katago
-func (m *Manager) Run(binName string, weightName string, configName string) (*exec.Cmd, error) {
+func (m *Manager) Run(binName string, weightName string, configName string, customConfigFile *string) (*exec.Cmd, error) {
 
 	var binConfig *BinConfig = nil
 	var weightConfig *WeightConfig = nil
@@ -236,14 +236,18 @@ func (m *Manager) Run(binName string, weightName string, configName string) (*ex
 		log.Printf("config name: " + configName + " not found.")
 		return nil, errors.New("config name: " + configName + " not found.")
 	}
+	configFile := configConfig.Path
+	if customConfigFile != nil {
+		configFile = *customConfigFile
+	}
 	if binConfig.Runner == nil || len(*binConfig.Runner) == 0 {
 		// no runner, run directly
-		return m.runDirectly(binConfig.Path, weightConfig.Path, configConfig.Path)
+		return m.runDirectly(binConfig.Path, weightConfig.Path, configFile)
 	}
 	// run by runner
 	if *binConfig.Runner == "aistudio-runner" {
 		// special for aistudio
-		return m.runByAiStudioRunner(binName, binConfig.Path, weightConfig.Path, configConfig.Path)
+		return m.runByAiStudioRunner(binName, binConfig.Path, weightConfig.Path, configFile)
 	}
-	return m.runByRunner(*binConfig.Runner, binConfig.Path, weightConfig.Path, configConfig.Path)
+	return m.runByRunner(*binConfig.Runner, binConfig.Path, weightConfig.Path, configFile)
 }
