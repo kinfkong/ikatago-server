@@ -10,7 +10,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jessevdk/go-flags"
+
 	"github.com/kinfkong/ikatago-server/config"
+	"github.com/kinfkong/ikatago-server/katago"
 	"github.com/kinfkong/ikatago-server/model"
 	"github.com/kinfkong/ikatago-server/nat"
 	"github.com/kinfkong/ikatago-server/platform"
@@ -114,6 +116,12 @@ func main() {
 	platform, err := getPlatformFromWorld()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// check the katago manager
+	katagoManager := katago.GetManager()
+	if katagoManager == nil {
+		log.Fatal("katago config seems wrong...")
 	}
 
 	// start sshd

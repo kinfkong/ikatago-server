@@ -13,26 +13,23 @@ import (
 	"github.com/spf13/viper"
 )
 
-// CommonConfigItem represents the common configuration items
-type CommonConfigItem struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
-}
-
 // BinConfig the bin configs
 type BinConfig struct {
-	CommonConfigItem
+	Name   string  `json:"name"`
+	Path   string  `json:"path"`
 	Runner *string `json:"runner"`
 }
 
 // WeightConfig the bin configs
 type WeightConfig struct {
-	CommonConfigItem
+	Name string `json:"name"`
+	Path string `json:"path"`
 }
 
 // ConfigConfig the bin configs
 type ConfigConfig struct {
-	CommonConfigItem
+	Name string `json:"name"`
+	Path string `json:"path"`
 }
 
 // Manager managers the katagos

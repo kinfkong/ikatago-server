@@ -4,29 +4,17 @@ server:
 katago:
   bins:
     - name: katago-1.4.5 # name it any name
-      path: /usr/local/bin/katago-1.4.5 # the katago bin file location
-      runner: aistudio-runner # optional, only baidu aistudio needs this. 
-    - name: katago-1.5.0
-      path: /usr/local/bin/katago-1.5.0
-      runner: aistudio-runner
-    - name: katago-1.5.0-29x29
-      path: /usr/local/bin/katago29x29
-      runner: aistudio-runner
+      path: /usr/local/bin/katago # the katago bin file location
+      # runner: aistudio-runner # optional, only baidu aistudio needs this. 
   weights:
     - name: 20b
       path: /Users/wangjinggang/gochess/katago/model.bin.gz
-    - name: 30b
-      path: /Users/wangjinggang/gochess/katago/30b.bin.gz
-    - name: 40b
-      path: /Users/wangjinggang/gochess/katago/40b.bin.gz
   configs:
     - name: 1po
       path: /Users/wangjinggang/gochess/remote/katago_1v.cfg
-    - name: 24thread_6000v
-      path: /Users/wangjinggang/gochess/remote/katago_6000v.cfg
-  default_bin_name: katago-1.5.0 
-  default_weight_name: 40b
-  default_config_name: 24thread_6000v
+  default_bin_name: katago-1.4.5
+  default_weight_name: 20b
+  default_config_name: 1po
 
 use_nat: direct
 
