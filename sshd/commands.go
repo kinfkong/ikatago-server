@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -78,14 +79,28 @@ func copyConfig(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	katagoManager := katago.GetManager()
 	outputDir := fmt.Sprintf("%s/%s", katagoManager.CustomConfigDir, session.User())
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		os.Mkdir(outputDir, os.ModeDir)
+		os.Mkdir(outputDir, 0755)
 	}
 	outputFile := fmt.Sprintf("%s/%s", outputDir, args[0])
-	f, err := os.Create(outputFile)
+
+	buf := new(strings.Builder)
+	_, err := io.Copy(buf, session)
+	if err != nil {
+		log.Printf("ERROR failed to read session: %+v\n", err)
+		return nil, err
+	}
+	// fmt.Println(buf.String())
+
+	/*f, err := os.Create(outputFile)
 	defer f.Close()
 	_, err = io.Copy(f, session)
 	if err != nil {
 		log.Printf("ERROR failed to read session: %+v\n", err)
+		return nil, err
+	}*/
+	err = ioutil.WriteFile(outputFile, []byte(buf.String()), 0644)
+	if err != nil {
+		log.Printf("ERROR failed to write file: %+v\n", err)
 		return nil, err
 	}
 	return exec.Command("echo", "Copy Done!"), nil
