@@ -179,11 +179,8 @@ func (m *Manager) runByAiStudioRunner(binName string, binPath string, weightPath
 	return exec.Command("/bin/sh", "-c", fmt.Sprintf("export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH; %s gtp -config %s -model %s", outputRootPath, katagoOutputName, configPath, weightPath)), nil
 }
 
-// Run runs it
-func (m *Manager) Run(binNamePtr *string, weightNamePtr *string, configNamePtr *string) (*exec.Cmd, error) {
-	var binName string
-	var configName string
-	var weightName string
+// GetCurrentUsingNames gets the current useing names
+func (m *Manager) GetCurrentUsingNames(binNamePtr *string, weightNamePtr *string, configNamePtr *string) (binName string, weightName string, configName string) {
 	if binNamePtr == nil {
 		binName = m.DefaultBinName
 	} else {
@@ -199,6 +196,11 @@ func (m *Manager) Run(binNamePtr *string, weightNamePtr *string, configNamePtr *
 	} else {
 		configName = *configNamePtr
 	}
+	return
+}
+
+// Run runs the katago
+func (m *Manager) Run(binName string, weightName string, configName string) (*exec.Cmd, error) {
 
 	var binConfig *BinConfig = nil
 	var weightConfig *WeightConfig = nil
@@ -223,15 +225,15 @@ func (m *Manager) Run(binNamePtr *string, weightNamePtr *string, configNamePtr *
 	}
 	if binConfig == nil {
 		log.Printf("bin name: " + binName + " not found.")
-		return nil, errors.New("bin_not_found")
+		return nil, errors.New("bin name: " + binName + " not found.")
 	}
 	if weightConfig == nil {
 		log.Printf("weight name: " + weightName + " not found.")
-		return nil, errors.New("weight_not_found")
+		return nil, errors.New("weight name: " + weightName + " not found.")
 	}
 	if configConfig == nil {
 		log.Printf("config name: " + configName + " not found.")
-		return nil, errors.New("config_not_found")
+		return nil, errors.New("config name: " + configName + " not found.")
 	}
 	if binConfig.Runner == nil || len(*binConfig.Runner) == 0 {
 		// no runner, run directly

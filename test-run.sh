@@ -1,3 +1,3 @@
 #!/bin/bash
-ssh-keygen -R [120.53.123.43]:36040
-ssh -o StrictHostKeyChecking=no -p 36040 testuser@120.53.123.43 run-katago
+ssh-keygen -R [192.168.1.222]:2222
+ssh -o StrictHostKeyChecking=no -p 2222 kinfkong@192.168.1.222 run-katago --name katago-1.5.0 --config 1po --weight 20b

@@ -24,7 +24,7 @@ type UserInfo struct {
 var Users []UserInfo
 
 // SSHCommandHandler the ssh command handler
-type SSHCommandHandler func(...string) (*exec.Cmd, error)
+type SSHCommandHandler func(ssh.Session, ...string) (*exec.Cmd, error)
 
 // Handlers all the sshd handlers
 var Handlers map[string]SSHCommandHandler = make(map[string]SSHCommandHandler)
@@ -90,9 +90,13 @@ func RunAsync() error {
 			return
 		}
 		log.Printf("DEBUG executing cmd: %+v\n", cmds)
-		cmd, err := handler(cmds[1:]...)
-		if err != nil || cmd == nil {
-			io.WriteString(s, fmt.Sprintf("Something error happens...err:%+v\n", err))
+		cmd, err := handler(s, cmds[1:]...)
+		if err != nil {
+			io.WriteString(s, fmt.Sprintf("Something error happens...\nerr:%+v\n", err))
+			return
+		}
+		if cmd == nil {
+			// nothing to do
 			return
 		}
 		cmd.Env = s.Environ()
