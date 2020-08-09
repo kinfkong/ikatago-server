@@ -22,7 +22,7 @@ func init() {
 
 }
 
-var runKatagoOpts struct {
+type runkatagoOptsType struct {
 	Name         *string `long:"name" description:"the katago bin name"`
 	Weight       *string `long:"weight" description:"the katago weight name"`
 	Config       *string `long:"config" description:"the katago config name"`
@@ -30,28 +30,112 @@ var runKatagoOpts struct {
 }
 
 func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
-	_, err := flags.ParseArgs(&runKatagoOpts, args)
+	runKatagoOpts := runkatagoOptsType{}
+	subcommands, err := flags.ParseArgs(&runKatagoOpts, args)
 	if err != nil {
 		log.Printf("ERROR failed to parse kagato args: %+v\n", args)
 		return nil, errors.New("invalid_command_args")
 	}
-	outputKataInfo(session)
-	katagoManager := katago.GetManager()
-
-	binName, weightName, configName := katagoManager.GetCurrentUsingNames(runKatagoOpts.Name, runKatagoOpts.Weight, runKatagoOpts.Config)
-	io.WriteString(session, fmt.Sprintf("using katago name: %s\n", binName))
-	io.WriteString(session, fmt.Sprintf("using katago weight: %s\n", weightName))
-	var customConfigFile *string = nil
-	if runKatagoOpts.CustomConfig == nil {
-		io.WriteString(session, fmt.Sprintf("using katago config: %s\n", configName))
-	} else {
-		io.WriteString(session, fmt.Sprintf("using custom katago config: %s\n", *runKatagoOpts.CustomConfig))
-		// construct the file path
-		theFile := fmt.Sprintf("%s/%s/%s", katagoManager.CustomConfigDir, session.User(), *runKatagoOpts.CustomConfig)
-		customConfigFile = &theFile
+	if len(subcommands) == 0 {
+		// gtp by default
+		subcommands = append(subcommands, "gtp")
+	}
+	found := false
+	for _, subcommand := range subcommands {
+		if subcommand == "-model" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		subcommands = append(subcommands, "-model", "KATA_WEIGHT_PLACEHOLDER")
+	}
+	found = false
+	for _, subcommand := range subcommands {
+		if subcommand == "-config" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		subcommands = append(subcommands, "-config", "KATA_CONFIG_PLACEHOLDER")
 	}
 
-	return katago.GetManager().Run(binName, weightName, configName, customConfigFile)
+	subcommands, err = replaceKataConfigPlaceHolder(session, &runKatagoOpts, subcommands)
+	if err != nil {
+		return nil, err
+	}
+	subcommands, err = replaceKataWeightPlaceHolder(session, &runKatagoOpts, subcommands)
+	if err != nil {
+		return nil, err
+	}
+	binName := katago.GetManager().DefaultBinName
+	if runKatagoOpts.Name != nil {
+		binName = *runKatagoOpts.Name
+	}
+	return katago.GetManager().Run(binName, subcommands)
+}
+
+func replaceKataConfigPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoOptsType, subcommands []string) ([]string, error) {
+	m := katago.GetManager()
+	var configFile *string = nil
+	if runKatagoOpts.CustomConfig != nil {
+		theFile := fmt.Sprintf("%s/%s/%s", m.CustomConfigDir, session.User(), *runKatagoOpts.CustomConfig)
+		configFile = &theFile
+	}
+	if configFile == nil {
+		// no custom config file, use the built-in configs
+		configName := runKatagoOpts.Config
+		if configName == nil {
+			configName = &m.DefaultConfigName
+		}
+		for _, item := range m.Configs {
+			if item.Name == *configName {
+				configFile = &item.Path
+				break
+			}
+		}
+	}
+	result := make([]string, len(subcommands))
+	for i, command := range subcommands {
+		if command == "KATA_CONFIG_PLACEHOLDER" {
+			if configFile == nil {
+				return nil, errors.New("no_config_file")
+			}
+			result[i] = *configFile
+		} else {
+			result[i] = command
+		}
+	}
+	return result, nil
+}
+
+func replaceKataWeightPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoOptsType, subcommands []string) ([]string, error) {
+	m := katago.GetManager()
+	// no custom config file, use the built-in configs
+	weightName := runKatagoOpts.Config
+	if weightName == nil {
+		weightName = &m.DefaultConfigName
+	}
+	var weightFile *string = nil
+	for _, item := range m.Configs {
+		if item.Name == *weightName {
+			weightFile = &item.Path
+			break
+		}
+	}
+	result := make([]string, len(subcommands))
+	for i, command := range subcommands {
+		if command == "KATA_WEIGHT_PLACEHOLDER" {
+			if weightFile == nil {
+				return nil, errors.New("no_weight_file")
+			}
+			result[i] = *weightFile
+		} else {
+			result[i] = command
+		}
+	}
+	return result, nil
 }
 
 func outputKataInfo(session ssh.Session) {

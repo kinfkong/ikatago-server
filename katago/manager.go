@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"strings"
 	"sync"
 
 	"github.com/kinfkong/ikatago-server/config"
@@ -116,15 +117,17 @@ func NewManager(configObject *viper.Viper) *Manager {
 	return &manager
 }
 
-func (m *Manager) runDirectly(binPath string, weightPath string, configPath string) (*exec.Cmd, error) {
-	return exec.Command(binPath, "gtp", "-config", configPath, "-model", weightPath), nil
+func (m *Manager) runDirectly(binPath string, subcommands []string) (*exec.Cmd, error) {
+	return exec.Command(binPath, subcommands...), nil
 }
 
-func (m *Manager) runByRunner(runnerPath string, binPath string, weightPath string, configPath string) (*exec.Cmd, error) {
-	return exec.Command(runnerPath, binPath, "gtp", "-config", configPath, "-model", weightPath), nil
+func (m *Manager) runByRunner(runnerPath string, binPath string, subcommands []string) (*exec.Cmd, error) {
+	all := []string{binPath}
+	all = append(all, subcommands...)
+	return exec.Command(runnerPath, all...), nil
 }
 
-func (m *Manager) runByAiStudioRunner(binName string, binPath string, weightPath string, configPath string) (*exec.Cmd, error) {
+func (m *Manager) runByAiStudioRunner(binName string, binPath string, subcommands []string) (*exec.Cmd, error) {
 	decryptePassword := "abcde12345"
 	decrypteCommandTemplate := "openssl enc -in %s -d -aes-256-cbc -pass pass:%s > %s"
 
@@ -177,77 +180,34 @@ func (m *Manager) runByAiStudioRunner(binName string, binPath string, weightPath
 		return nil, err
 	}
 
-	return exec.Command("/bin/sh", "-c", fmt.Sprintf("export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH; %s gtp -config %s -model %s", outputRootPath, katagoOutputName, configPath, weightPath)), nil
-}
-
-// GetCurrentUsingNames gets the current useing names
-func (m *Manager) GetCurrentUsingNames(binNamePtr *string, weightNamePtr *string, configNamePtr *string) (binName string, weightName string, configName string) {
-	if binNamePtr == nil {
-		binName = m.DefaultBinName
-	} else {
-		binName = *binNamePtr
-	}
-	if weightNamePtr == nil {
-		weightName = m.DefaultWeightName
-	} else {
-		weightName = *weightNamePtr
-	}
-	if configNamePtr == nil {
-		configName = m.DefaultConfigName
-	} else {
-		configName = *configNamePtr
-	}
-	return
+	return exec.Command("/bin/sh", "-c", fmt.Sprintf("export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH; %s %s", outputRootPath, katagoOutputName, strings.Join(subcommands, " "))), nil
 }
 
 // Run runs the katago
-func (m *Manager) Run(binName string, weightName string, configName string, customConfigFile *string) (*exec.Cmd, error) {
+func (m *Manager) Run(binName string, subcommands []string) (*exec.Cmd, error) {
 
 	var binConfig *BinConfig = nil
-	var weightConfig *WeightConfig = nil
-	var configConfig *ConfigConfig = nil
+
 	for _, item := range m.Bins {
 		if item.Name == binName {
 			binConfig = &item
 			break
 		}
 	}
-	for _, item := range m.Weights {
-		if item.Name == weightName {
-			weightConfig = &item
-			break
-		}
-	}
-	for _, item := range m.Configs {
-		if item.Name == configName {
-			configConfig = &item
-			break
-		}
-	}
+
 	if binConfig == nil {
 		log.Printf("bin name: " + binName + " not found.")
 		return nil, errors.New("bin name: " + binName + " not found.")
 	}
-	if weightConfig == nil {
-		log.Printf("weight name: " + weightName + " not found.")
-		return nil, errors.New("weight name: " + weightName + " not found.")
-	}
-	if configConfig == nil {
-		log.Printf("config name: " + configName + " not found.")
-		return nil, errors.New("config name: " + configName + " not found.")
-	}
-	configFile := configConfig.Path
-	if customConfigFile != nil {
-		configFile = *customConfigFile
-	}
+
 	if binConfig.Runner == nil || len(*binConfig.Runner) == 0 {
 		// no runner, run directly
-		return m.runDirectly(binConfig.Path, weightConfig.Path, configFile)
+		return m.runDirectly(binConfig.Path, subcommands)
 	}
 	// run by runner
 	if *binConfig.Runner == "aistudio-runner" {
 		// special for aistudio
-		return m.runByAiStudioRunner(binName, binConfig.Path, weightConfig.Path, configFile)
+		return m.runByAiStudioRunner(binName, binConfig.Path, subcommands)
 	}
-	return m.runByRunner(*binConfig.Runner, binConfig.Path, weightConfig.Path, configFile)
+	return m.runByRunner(*binConfig.Runner, binConfig.Path, subcommands)
 }
