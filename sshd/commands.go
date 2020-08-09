@@ -29,6 +29,26 @@ type runkatagoOptsType struct {
 	CustomConfig *string `long:"custom-config" description:"the katago custom config file name"`
 }
 
+func isValidArg(cmd string, arg string) bool {
+	knownCmds := map[string][]string{
+		"gtp":       {"-model", "-config"},
+		"benchmark": {"-model", "-config"},
+		"genconfig": {"-model"},
+		"analysis":  {"-model", "-config"},
+		"tuner":     {"-model"},
+	}
+	args, ok := knownCmds[cmd]
+	if !ok {
+		return false
+	}
+	for _, v := range args {
+		if v == arg {
+			return true
+		}
+	}
+	return false
+
+}
 func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	runKatagoOpts := runkatagoOptsType{}
 	subcommands, err := flags.ParseArgs(&runKatagoOpts, args)
@@ -48,7 +68,9 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 		}
 	}
 	if !found {
-		subcommands = append(subcommands, "-model", "KATA_WEIGHT_PLACEHOLDER")
+		if isValidArg(subcommands[0], "-model") {
+			subcommands = append(subcommands, "-model", "KATA_WEIGHT_PLACEHOLDER")
+		}
 	}
 	found = false
 	for _, subcommand := range subcommands {
@@ -58,7 +80,9 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 		}
 	}
 	if !found {
-		subcommands = append(subcommands, "-config", "KATA_CONFIG_PLACEHOLDER")
+		if isValidArg(subcommands[0], "-config") {
+			subcommands = append(subcommands, "-config", "KATA_CONFIG_PLACEHOLDER")
+		}
 	}
 
 	subcommands, err = replaceKataConfigPlaceHolder(session, &runKatagoOpts, subcommands)
