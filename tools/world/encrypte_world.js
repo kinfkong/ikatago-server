@@ -58,7 +58,8 @@ for (const platform of world.platforms) {
     }
     tokens.push({
         platform: platform.name,
-        token
+        token,
+        createdAt: new Date()
     })
     delete platform.token
     newWorld.platforms.push(platform)

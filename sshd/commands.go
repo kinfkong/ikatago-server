@@ -173,7 +173,7 @@ func copyConfig(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	katagoManager := katago.GetManager()
 	outputDir := fmt.Sprintf("%s/%s", katagoManager.CustomConfigDir, session.User())
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		os.Mkdir(outputDir, 0755)
+		os.MkdirAll(outputDir, 0755)
 	}
 	outputFile := fmt.Sprintf("%s/%s", outputDir, args[0])
 

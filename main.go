@@ -21,6 +21,10 @@ import (
 	"github.com/kinfkong/ikatago-server/utils"
 )
 
+const (
+	ServerVersion = "1.2.1"
+)
+
 var opts struct {
 	World         *string `short:"w" long:"world" description:"The world url."`
 	Platform      string  `short:"p" long:"platform" description:"The platform, like aistudio, colab" required:"true"`
@@ -90,6 +94,14 @@ func validateToken(tokenString string, publicKey string) (jwt.MapClaims, error) 
 	if aud, _ := claims["aud"]; aud != config.GetConfig().GetString("platform.name") {
 		return nil, errors.New("invalid_token")
 	}
+	var expV int64 = 0
+	switch exp := claims["exp"].(type) {
+	case float64:
+		expV = int64(exp)
+	case json.Number:
+		expV, _ = exp.Int64()
+	}
+	log.Printf("Token will expires at: %v\n", time.Unix(expV, 0))
 	return claims, err
 }
 
@@ -112,6 +124,7 @@ func parseArgs() {
 }
 
 func main() {
+	fmt.Printf("Server Version: %s\n", ServerVersion)
 	parseArgs()
 	platform, err := getPlatformFromWorld()
 	if err != nil {
