@@ -4,8 +4,8 @@ server:
 katago:
   bins:
     - name: katago-1.4.5 # name it any name
-      path: /Users/wangjinggang/gochess/ikatago-credentials/aistudio/katago.1.4.5 # the katago bin file location
-      runner: aistudio-runner
+      path: /usr/local/bin/katago # the katago bin file location
+      # runner: aistudio-runner
     - name: katago-1.5.0 # name it any name
       path: /Users/wangjinggang/gochess/ikatago-credentials/aistudio/katago.1.5.0 # the katago bin file location
       runner: aistudio-runner # optional, only baidu aistudio needs this. 

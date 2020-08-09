@@ -112,13 +112,13 @@ func replaceKataConfigPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoO
 
 func replaceKataWeightPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoOptsType, subcommands []string) ([]string, error) {
 	m := katago.GetManager()
-	// no custom config file, use the built-in configs
-	weightName := runKatagoOpts.Config
+	// no custom weight file, use the built-in weight
+	weightName := runKatagoOpts.Weight
 	if weightName == nil {
-		weightName = &m.DefaultConfigName
+		weightName = &m.DefaultWeightName
 	}
 	var weightFile *string = nil
-	for _, item := range m.Configs {
+	for _, item := range m.Weights {
 		if item.Name == *weightName {
 			weightFile = &item.Path
 			break
