@@ -129,7 +129,7 @@ func (m *Manager) runByRunner(runnerPath string, binPath string, subcommands []s
 
 func (m *Manager) runByAiStudioRunner(binName string, binPath string, subcommands []string) (*exec.Cmd, error) {
 	decryptePassword := "abcde12345"
-	decrypteCommandTemplate := "openssl enc -in %s -d -aes-256-cbc -pass pass:%s > %s"
+	decrypteCommandTemplate := "openssl enc -in %s -d -aes-256-cbc -pass pass:%s -md sha512 -pbkdf2 -iter 1000 > %s"
 
 	inputRootPath := binPath
 	outputRootPath := "/tmp/" + binName
