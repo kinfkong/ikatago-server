@@ -11,7 +11,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "env": {},
-            "args": ["--platform", "aistudio", "--token", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhRW5jcnlwdEtleVByZWZpeCI6ImFpc3R1ZGlvLXNlY3JldCIsImlhdCI6MTU5NjU1NDM4MCwiZXhwIjoxNTk3MTkwNDAwLCJhdWQiOiJhaXN0dWRpbyIsImlzcyI6ImtpbmZrb25nIn0.M194Njo7SDXpT8zlOi_BY4IS_7zqxXTQVmaEWsMrfdB2a7JXCOlnI20Cg3Z16aW8vNL20JYfZ-gAqi0SA5Qv2XHfOfu3O_eNTmYdmS-nsI4js2354qFSmHS_278cr4IiBsBaSD0JiSNyVaZwJpp2ZAYGrtvJlq3r3qDJoLjb17gsukSFjqYpW59P0NBHEcQo3Rom59nVmpbEQFF96B8qWtMtsLCQtg5jlXesRf4ccWgpGEaBh3CwytpROeNhQFWYrKVF3cOfLTOi5yhJSWUZ4s5i9EADOXc4Najga6t3P9ZbH_utCPZmHZFUMcGBQt1naZsj76fu0yLudx7o-xCWVQ"]
+            "args": ["--platform", "aistudio", "--token", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhRW5jcnlwdEtleVByZWZpeCI6ImFpc3R1ZGlvLXNlY3JldCIsImlhdCI6MTU5Njk1MTgwMywiZXhwIjoxNjMzMDQ2Mzk5LCJhdWQiOiJhaXN0dWRpbyIsImlzcyI6ImtpbmZrb25nIn0.US9KvL96UkPsbxyhrABa4IY2FXeK4-JNT_zspey5kG2yRhp3fKBZw7Um0W3wBXzGrGc6-DvPkDRvkgF4B_aOAMT9aYDBaI3PpThIL10tmGE7nCtWb-7yDCYd8whTlaiQMnhT7uQCKyCQ4zTxB9DaVbDz0chxmmpEaHUBBJely5YTNb7OMgDNwIVmx0VYckOY7miPgQQBJmYzFJeut8eUBiDsCvBdjs0rvhiKddyIvqXMs73aNFPvNcuLqErcq3UytoLrr9tB5Wa-eo1DeIAr3RwJJuID5AoT-6zMBETIPJnKGeDNCYZcaUumDuR5bGc56_vbFVfJQxgYmSe8RIFJ8A"]
         }
     ]
 }

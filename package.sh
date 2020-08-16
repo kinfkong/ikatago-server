@@ -34,3 +34,13 @@ GOOS=windows GOARCH=386 go build -o ./bin/$OUTPUT_PATH/ikatago-server.exe
 cd ./bin
 zip -r $OUTPUT_PATH.zip $OUTPUT_PATH
 cd - >/dev/null
+
+
+# raspbian pi
+OUTPUT_PATH=ikatago-server-$SVR_VERSION-raspbian
+mkdir -p ./bin/$OUTPUT_PATH
+GOOS=linux GOARCH=arm GOARM=8 go build -o ./bin/$OUTPUT_PATH/ikatago-server
+cd ./bin
+zip -r $OUTPUT_PATH.zip $OUTPUT_PATH
+cd - >/dev/null
+
