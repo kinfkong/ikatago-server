@@ -99,10 +99,6 @@ func RunAsync() error {
 			// nothing to do
 			return
 		}
-		cmd.Env = s.Environ()
-		cmd.Stdin = s
-		cmd.Stdout = s
-		cmd.Stderr = s.Stderr()
 		if err := cmd.Run(); err != nil {
 			log.Println(err)
 			return

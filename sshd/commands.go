@@ -97,7 +97,38 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	if runKatagoOpts.Name != nil {
 		binName = *runKatagoOpts.Name
 	}
-	return katago.GetManager().Run(binName, subcommands)
+	cmd, err := katago.GetManager().Run(binName, subcommands)
+	if err != nil {
+		return nil, err
+	}
+	cmd.Env = session.Environ()
+	cmd.Stdin = session
+	reader, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	gtpWriter := katago.NewGTPWriter(session)
+	go func() {
+		defer reader.Close()
+		buffer := make([]byte, 1024*10)
+		for {
+			n, err := reader.Read(buffer)
+			if err != nil {
+				if err == io.EOF {
+					// done
+					break
+				} else {
+					log.Printf("ERROR failed read buffer: %+v\n", err)
+					break
+				}
+			}
+			// write to the session
+			gtpWriter.Write(buffer[:n])
+		}
+	}()
+	// cmd.Stdout = session
+	cmd.Stderr = session.Stderr()
+	return cmd, nil
 }
 
 func replaceKataConfigPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoOptsType, subcommands []string) ([]string, error) {
@@ -207,19 +238,10 @@ func copyConfig(session ssh.Session, args ...string) (*exec.Cmd, error) {
 		log.Printf("ERROR failed to read session: %+v\n", err)
 		return nil, err
 	}
-	// fmt.Println(buf.String())
-
-	/*f, err := os.Create(outputFile)
-	defer f.Close()
-	_, err = io.Copy(f, session)
-	if err != nil {
-		log.Printf("ERROR failed to read session: %+v\n", err)
-		return nil, err
-	}*/
 	err = ioutil.WriteFile(outputFile, []byte(buf.String()), 0644)
 	if err != nil {
 		log.Printf("ERROR failed to write file: %+v\n", err)
 		return nil, err
 	}
-	return exec.Command("echo", "Copy Done!"), nil
+	return nil, nil
 }

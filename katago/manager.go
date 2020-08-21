@@ -74,6 +74,8 @@ func NewManager(configObject *viper.Viper) *Manager {
 				log.Printf("ERROR the path %s does not exist or not a directory\n", bin.Path)
 				return nil
 			}
+		} else if bin.Runner != nil && *bin.Runner == "cmd" {
+			// nothing to check
 		} else {
 			if !utils.FileExists(bin.Path) {
 				log.Printf("ERROR the path %s does not exist or not a file\n", bin.Path)
@@ -121,10 +123,8 @@ func (m *Manager) runDirectly(binPath string, subcommands []string) (*exec.Cmd, 
 	return exec.Command(binPath, subcommands...), nil
 }
 
-func (m *Manager) runByRunner(runnerPath string, binPath string, subcommands []string) (*exec.Cmd, error) {
-	all := []string{binPath}
-	all = append(all, subcommands...)
-	return exec.Command(runnerPath, all...), nil
+func (m *Manager) runByCmd(cmd string, subcommands []string) (*exec.Cmd, error) {
+	return exec.Command(cmd, subcommands...), nil
 }
 
 func (m *Manager) runByAiStudioRunner(binName string, binPath string, subcommands []string) (*exec.Cmd, error) {
@@ -208,6 +208,9 @@ func (m *Manager) Run(binName string, subcommands []string) (*exec.Cmd, error) {
 	if *binConfig.Runner == "aistudio-runner" {
 		// special for aistudio
 		return m.runByAiStudioRunner(binName, binConfig.Path, subcommands)
+	} else if *binConfig.Runner == "cmd" {
+		return m.runByCmd(binConfig.Path, subcommands)
+	} else {
+		return nil, errors.New("not_support_runner")
 	}
-	return m.runByRunner(*binConfig.Runner, binConfig.Path, subcommands)
 }
