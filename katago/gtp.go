@@ -2,6 +2,8 @@ package katago
 
 import (
 	"bytes"
+	"compress/gzip"
+	"encoding/binary"
 	"io"
 	"log"
 	"regexp"
@@ -14,17 +16,22 @@ import (
 // GTPWriter gtp writer
 type GTPWriter struct {
 	// NumOfTransmitMoves number of transmit moves
-	NumOfTransmitMoves int
-	writer             io.Writer
-	buffer             *bytes.Buffer
-	latestInfoWriteAt  *time.Time
+	NumOfTransmitMoves   int
+	MinRefreshCentSecond int
+	Compression          bool
+	writer               io.Writer
+	buffer               *bytes.Buffer
+	latestInfoWriteAt    *time.Time
+	firstWrite           bool
 }
 
 // NewGTPWriter new gtp writer
 func NewGTPWriter(writer io.Writer) *GTPWriter {
 	return &GTPWriter{
-		NumOfTransmitMoves: 1,
-		writer:             writer,
+		NumOfTransmitMoves:   15,
+		writer:               writer,
+		MinRefreshCentSecond: 30,
+		Compression:          false,
 	}
 }
 
@@ -49,17 +56,31 @@ func (writer *GTPWriter) Write(buf []byte) {
 		// last line is not a complete line
 		writer.buffer = bytes.NewBuffer([]byte(lastLine))
 		totalLines--
-		log.Printf("DEBUG last line is ignored [%v]\n", len(lastLine))
+		// log.Printf("DEBUG last line is ignored [%v]\n", len(lastLine))
 	} else {
 		writer.buffer = nil
 	}
-	log.Printf("DEBUG lines found: %v, lines sent: %v\n", len(lines), totalLines)
+	// log.Printf("DEBUG lines found: %v, lines sent: %v\n", len(lines), totalLines)
 
 	bufToWrite := writer.processLines(lines[:totalLines])
 
 	if len(bufToWrite) > 0 {
 		writer.writer.Write(bufToWrite)
 	}
+}
+
+func toGZipBuffer(buf []byte) []byte {
+	resultBuffer := bytes.NewBuffer(make([]byte, 0))
+	zippedBuffer := bytes.NewBuffer(make([]byte, 0))
+	gw, _ := gzip.NewWriterLevel(zippedBuffer, gzip.DefaultCompression)
+	gw.Write(buf)
+	gw.Close()
+
+	zipped := zippedBuffer.Bytes()
+	log.Printf("zipped, origin len: %d, zipped len: %d\n", len(buf), len(zipped))
+	binary.Write(resultBuffer, binary.LittleEndian, uint32(len(zipped)))
+	resultBuffer.Write(zipped)
+	return resultBuffer.Bytes()
 }
 
 func (writer *GTPWriter) processLines(lines []string) []byte {
@@ -69,11 +90,16 @@ func (writer *GTPWriter) processLines(lines []string) []byte {
 		processedLine := writer.processLine(line)
 		if strings.HasPrefix(processedLine, "info") {
 			// info line too fast, ignore this line
-			if writer.latestInfoWriteAt != nil && writer.latestInfoWriteAt.After(now.Add(time.Millisecond*(-350))) {
+			if writer.MinRefreshCentSecond > 0 && writer.latestInfoWriteAt != nil && writer.latestInfoWriteAt.After(now.Add(time.Millisecond*time.Duration(writer.MinRefreshCentSecond*-10))) {
 				// too fast, ignore
-				log.Printf("DEBUG too fast, ignored info")
+				// log.Printf("DEBUG too fast, ignored info")
 			} else {
-				buffer.WriteString(processedLine)
+				if writer.Compression {
+					buffer.Write([]byte{0xff})
+					buffer.Write(toGZipBuffer([]byte(processedLine)))
+				} else {
+					buffer.WriteString(processedLine)
+				}
 				buffer.WriteString("\n")
 				writer.latestInfoWriteAt = &now
 			}
@@ -103,7 +129,7 @@ func (writer *GTPWriter) processLine(line string) string {
 	} else {
 		infos = strings.Split(line, "info")
 	}
-	log.Printf("DEBUG infos found: %v\n", len(infos))
+	// log.Printf("DEBUG infos found: %v\n", len(infos))
 	visits := make([]int, len(infos))
 	m := regexp.MustCompile(`visits ([0-9]+)`)
 	for i, info := range infos {

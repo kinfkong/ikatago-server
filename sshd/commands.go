@@ -23,10 +23,13 @@ func init() {
 }
 
 type runkatagoOptsType struct {
-	Name         *string `long:"name" description:"the katago bin name"`
-	Weight       *string `long:"weight" description:"the katago weight name"`
-	Config       *string `long:"config" description:"the katago config name"`
-	CustomConfig *string `long:"custom-config" description:"the katago custom config file name"`
+	Name            *string `long:"name" description:"the katago bin name"`
+	Weight          *string `long:"weight" description:"the katago weight name"`
+	Config          *string `long:"config" description:"the katago config name"`
+	CustomConfig    *string `long:"custom-config" description:"the katago custom config file name"`
+	Compress        bool    `long:"compress" description:"compress the data during transmission"`
+	RefreshInterval int     `long:"refresh-interval" description:"sets the refresh interval in cent seconds" default:"30"`
+	TransmitMoveNum int     `long:"transmit-move-num" description:"limits number of moves when transmission during analyze" default:"20"`
 }
 
 func isValidArg(cmd string, arg string) bool {
@@ -108,6 +111,10 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 		return nil, err
 	}
 	gtpWriter := katago.NewGTPWriter(session)
+	gtpWriter.MinRefreshCentSecond = runKatagoOpts.RefreshInterval
+	gtpWriter.Compression = runKatagoOpts.Compress
+	gtpWriter.NumOfTransmitMoves = runKatagoOpts.TransmitMoveNum
+
 	go func() {
 		defer reader.Close()
 		buffer := make([]byte, 1024*10)
