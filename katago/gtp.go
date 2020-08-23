@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"encoding/binary"
 	"io"
-	"log"
 	"regexp"
 	"sort"
 	"strconv"
@@ -23,6 +22,11 @@ type GTPWriter struct {
 	buffer               *bytes.Buffer
 	latestInfoWriteAt    *time.Time
 	firstWrite           bool
+}
+
+type infoData struct {
+	info   string
+	visits int
 }
 
 // NewGTPWriter new gtp writer
@@ -52,14 +56,9 @@ func (writer *GTPWriter) Write(buf []byte) {
 	}
 	lastLine := lines[len(lines)-1]
 	totalLines := len(lines)
-	if !strings.HasSuffix(content, "\n") {
-		// last line is not a complete line
-		writer.buffer = bytes.NewBuffer([]byte(lastLine))
-		totalLines--
-		// log.Printf("DEBUG last line is ignored [%v]\n", len(lastLine))
-	} else {
-		writer.buffer = nil
-	}
+	// last line is not a complete line
+	writer.buffer = bytes.NewBuffer([]byte(lastLine))
+	totalLines--
 	// log.Printf("DEBUG lines found: %v, lines sent: %v\n", len(lines), totalLines)
 
 	bufToWrite := writer.processLines(lines[:totalLines])
@@ -77,7 +76,7 @@ func toGZipBuffer(buf []byte) []byte {
 	gw.Close()
 
 	zipped := zippedBuffer.Bytes()
-	log.Printf("zipped, origin len: %d, zipped len: %d\n", len(buf), len(zipped))
+	// log.Printf("zipped, origin len: %d, zipped len: %d\n", len(buf), len(zipped))
 	binary.Write(resultBuffer, binary.LittleEndian, uint32(len(zipped)))
 	resultBuffer.Write(zipped)
 	return resultBuffer.Bytes()
@@ -105,11 +104,9 @@ func (writer *GTPWriter) processLines(lines []string) []byte {
 			}
 		} else {
 			// write directly
-			if len(processedLine) > 0 {
-				writer.latestInfoWriteAt = nil
-				buffer.WriteString(processedLine)
-				buffer.WriteString("\n")
-			}
+			writer.latestInfoWriteAt = nil
+			buffer.WriteString(processedLine)
+			buffer.WriteString("\n")
 		}
 	}
 	return buffer.Bytes()
@@ -130,30 +127,34 @@ func (writer *GTPWriter) processLine(line string) string {
 		infos = strings.Split(line, "info")
 	}
 	// log.Printf("DEBUG infos found: %v\n", len(infos))
-	visits := make([]int, len(infos))
+	infoDatas := make([]infoData, len(infos))
 	m := regexp.MustCompile(`visits ([0-9]+)`)
 	for i, info := range infos {
+		visits := 0
 		match := m.FindStringSubmatch(info)
 		if len(match) > 1 {
 			v, err := strconv.Atoi(match[1])
 			if err != nil {
 				v = 0
 			}
-			visits[i] = v
-		} else {
-			visits[i] = 0
+			visits = v
+		}
+		infoDatas[i] = infoData{
+			visits: visits,
+			info:   info,
 		}
 	}
-	sort.SliceStable(infos, func(i, j int) bool {
-		return visits[i] > visits[j]
+	sort.SliceStable(infoDatas, func(i, j int) bool {
+		return infoDatas[i].visits > infoDatas[j].visits
 	})
 	var buffer bytes.Buffer
-	for i, info := range infos {
+
+	for i, infoData := range infoDatas {
 		if i >= writer.NumOfTransmitMoves {
 			break
 		}
 		buffer.WriteString("info")
-		buffer.WriteString(info)
+		buffer.WriteString(infoData.info)
 	}
 	if ownershipIndex >= 0 {
 		buffer.WriteString(line[ownershipIndex:])
