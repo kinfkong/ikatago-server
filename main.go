@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	ServerVersion = "1.3.0"
+	ServerVersion = "1.3.1"
 )
 
 var opts struct {
