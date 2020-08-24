@@ -73,7 +73,7 @@ var (
 // do some stuff
 var _ = func() error {
 	os.Setenv("KNAT_SERVER_ADDR", "120.53.123.43")
-	os.Setenv("KNAT_SERVER_PORT", "7000")
+	os.Setenv("KNAT_SERVER_PORT", "7001")
 	os.Setenv("KNAT_SERVER_TOKEN", "kinfkong")
 	return nil
 }()
