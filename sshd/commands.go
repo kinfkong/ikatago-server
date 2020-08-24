@@ -106,6 +106,8 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	}
 	cmd.Env = session.Environ()
 	cmd.Stdin = session
+	cmd.Stderr = session.Stderr()
+
 	reader, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
@@ -114,7 +116,6 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	gtpWriter.MinRefreshCentSecond = runKatagoOpts.RefreshInterval
 	gtpWriter.Compression = runKatagoOpts.Compress
 	gtpWriter.NumOfTransmitMoves = runKatagoOpts.TransmitMoveNum
-
 	go func() {
 		defer reader.Close()
 		buffer := make([]byte, 1024*10)
@@ -123,6 +124,7 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 			if err != nil {
 				if err == io.EOF {
 					// done
+					// log.Printf("DEBUG end reading")
 					break
 				} else {
 					log.Printf("ERROR failed read buffer: %+v\n", err)
@@ -132,9 +134,8 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 			// write to the session
 			gtpWriter.Write(buffer[:n])
 		}
+		session.Exit(0)
 	}()
-	// cmd.Stdout = session
-	cmd.Stderr = session.Stderr()
 	return cmd, nil
 }
 

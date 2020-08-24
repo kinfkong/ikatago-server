@@ -78,7 +78,7 @@ func readUsers(filename string) []UserInfo {
 func RunAsync() error {
 	Users = readUsers(config.GetConfig().GetString("users.file"))
 	ssh.Handle(func(s ssh.Session) {
-		defer s.Close()
+		defer s.Exit(0)
 		cmds := s.Command()
 		if len(cmds) == 0 {
 			io.WriteString(s, "No command found.\n")
@@ -89,20 +89,24 @@ func RunAsync() error {
 			io.WriteString(s, fmt.Sprintf("command [%s] is not supported.\n", cmds[0]))
 			return
 		}
-		log.Printf("DEBUG executing cmd: %+v\n", cmds)
+		log.Printf("INFO user[%s] executing cmd: %+v\n", s.User(), cmds)
 		cmd, err := handler(s, cmds[1:]...)
 		if err != nil {
 			io.WriteString(s, fmt.Sprintf("Something error happens...\nerr:%+v\n", err))
+			log.Printf("INFO user [%s] session done\n", s.User())
 			return
 		}
 		if cmd == nil {
 			// nothing to do
+			log.Printf("INFO user [%s] session done\n", s.User())
 			return
 		}
 		if err := cmd.Run(); err != nil {
+			log.Printf("INFO user [%s] session done\n", s.User())
 			log.Println(err)
 			return
 		}
+		log.Printf("INFO user [%s] session done\n", s.User())
 	})
 
 	passwordAuthOption := ssh.PasswordAuth(func(ctx ssh.Context, password string) bool {
