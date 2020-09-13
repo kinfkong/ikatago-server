@@ -5,3 +5,17 @@ type SSHLoginInfo struct {
 	Port int    `json:"port"`
 	User string `json:"user"`
 }
+type ServerInfoItem struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+}
+
+type ServerInfo struct {
+	ServerVersion      string           `json:"serverVersion"`
+	SupportKataWeights []ServerInfoItem `json:"supportKataWeights"`
+	SupportKataNames   []ServerInfoItem `json:"supportKataNames"`
+	SupportKataConfigs []ServerInfoItem `json:"supportKataConfigs"`
+	DefaultKataName    string           `json:"defaultKataName"`
+	DefaultKataWeight  string           `json:"defaultKataWeight"`
+	DefaultKataConfig  string           `json:"defaultKataConfig"`
+}

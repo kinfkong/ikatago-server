@@ -1,6 +1,7 @@
 package sshd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -13,11 +14,13 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/jessevdk/go-flags"
 	"github.com/kinfkong/ikatago-server/katago"
+	"github.com/kinfkong/ikatago-server/model"
+	"github.com/kinfkong/ikatago-server/utils"
 )
 
 func init() {
 	RegisterCommandHandler("run-katago", runKatago)
-	RegisterCommandHandler("query-katago", queryKatago)
+	RegisterCommandHandler("query-server", queryServer)
 	RegisterCommandHandler("scp-config", copyConfig)
 
 }
@@ -220,12 +223,44 @@ func outputKataInfo(session ssh.Session) {
 	io.WriteString(session, fmt.Sprintf("support katago configs: %s\n", strings.Join(configs, ", ")))
 }
 
-func queryKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
-	outputKataInfo(session)
+func queryServer(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	katagoManager := katago.GetManager()
-	io.WriteString(session, fmt.Sprintf("default katago name: %s\n", katagoManager.DefaultBinName))
-	io.WriteString(session, fmt.Sprintf("default katago weight: %s\n", katagoManager.DefaultWeightName))
-	io.WriteString(session, fmt.Sprintf("default katago config: %s\n", katagoManager.DefaultConfigName))
+	kataNames := make([]model.ServerInfoItem, 0)
+	kataConfigs := make([]model.ServerInfoItem, 0)
+	kataWeights := make([]model.ServerInfoItem, 0)
+	for _, bin := range katagoManager.Bins {
+		kataNames = append(kataNames, model.ServerInfoItem{
+			Name:        bin.Name,
+			Description: bin.Description,
+		})
+	}
+	for _, weight := range katagoManager.Weights {
+		kataWeights = append(kataWeights, model.ServerInfoItem{
+			Name:        weight.Name,
+			Description: weight.Description,
+		})
+	}
+	for _, configItem := range katagoManager.Configs {
+		kataConfigs = append(kataConfigs, model.ServerInfoItem{
+			Name:        configItem.Name,
+			Description: configItem.Description,
+		})
+	}
+	serverInfo := model.ServerInfo{
+		ServerVersion:      utils.ServerVersion,
+		SupportKataNames:   kataNames,
+		SupportKataConfigs: kataConfigs,
+		SupportKataWeights: kataWeights,
+		DefaultKataWeight:  katagoManager.DefaultWeightName,
+		DefaultKataConfig:  katagoManager.DefaultConfigName,
+		DefaultKataName:    katagoManager.DefaultBinName,
+	}
+	b, err := json.Marshal(serverInfo)
+	if err != nil {
+		log.Printf("ERROR failed to json the server info: %v\n", err)
+		return nil, err
+	}
+	io.WriteString(session, string(b))
 	return nil, nil
 }
 

@@ -21,10 +21,6 @@ import (
 	"github.com/kinfkong/ikatago-server/utils"
 )
 
-const (
-	ServerVersion = "1.3.1"
-)
-
 var opts struct {
 	World         *string `short:"w" long:"world" description:"The world url."`
 	Platform      string  `short:"p" long:"platform" description:"The platform, like aistudio, colab" required:"true"`
@@ -124,7 +120,7 @@ func parseArgs() {
 }
 
 func main() {
-	fmt.Printf("Server Version: %s\n", ServerVersion)
+	fmt.Printf("Server Version: %s\n", utils.ServerVersion)
 	parseArgs()
 	platform, err := getPlatformFromWorld()
 	if err != nil {

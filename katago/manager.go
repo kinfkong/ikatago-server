@@ -16,21 +16,24 @@ import (
 
 // BinConfig the bin configs
 type BinConfig struct {
-	Name   string  `json:"name"`
-	Path   string  `json:"path"`
-	Runner *string `json:"runner"`
+	Name        string  `json:"name"`
+	Path        string  `json:"path"`
+	Runner      *string `json:"runner"`
+	Description *string `json:"description"`
 }
 
 // WeightConfig the bin configs
 type WeightConfig struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
+	Name        string  `json:"name"`
+	Path        string  `json:"path"`
+	Description *string `json:"description"`
 }
 
 // ConfigConfig the bin configs
 type ConfigConfig struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
+	Name        string  `json:"name"`
+	Path        string  `json:"path"`
+	Description *string `json:"description"`
 }
 
 // Manager managers the katagos
