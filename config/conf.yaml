@@ -16,6 +16,9 @@ katago:
   weights:
     - name: 20b
       path: /Users/wangjinggang/gochess/katago/model.bin.gz
+    - name: 40b
+      path: /Users/wangjinggang/gochess/katago/40b.bin.gz
+      optional: true
   configs:
     - name: 1po
       path: /Users/wangjinggang/gochess/remote/katago_1v.cfg

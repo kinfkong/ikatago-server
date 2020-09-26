@@ -156,7 +156,7 @@ func replaceKataConfigPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoO
 			configName = &m.DefaultConfigName
 		}
 		for _, item := range m.Configs {
-			if item.Name == *configName {
+			if item.Name == *configName && m.IsAvailableResource(item) {
 				configFile = &item.Path
 				break
 			}
@@ -185,7 +185,7 @@ func replaceKataWeightPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoO
 	}
 	var weightFile *string = nil
 	for _, item := range m.Weights {
-		if item.Name == *weightName {
+		if item.Name == *weightName && m.IsAvailableResource(item) {
 			weightFile = &item.Path
 			break
 		}
@@ -204,43 +204,33 @@ func replaceKataWeightPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoO
 	return result, nil
 }
 
-func outputKataInfo(session ssh.Session) {
-	katagoManager := katago.GetManager()
-	weights := make([]string, 0)
-	for _, weight := range katagoManager.Weights {
-		weights = append(weights, weight.Name)
-	}
-	bins := make([]string, 0)
-	for _, bin := range katagoManager.Bins {
-		bins = append(bins, bin.Name)
-	}
-	configs := make([]string, 0)
-	for _, kataConfig := range katagoManager.Configs {
-		configs = append(configs, kataConfig.Name)
-	}
-	io.WriteString(session, fmt.Sprintf("support katago names: %s\n", strings.Join(bins, ", ")))
-	io.WriteString(session, fmt.Sprintf("support katago weights: %s\n", strings.Join(weights, ", ")))
-	io.WriteString(session, fmt.Sprintf("support katago configs: %s\n", strings.Join(configs, ", ")))
-}
-
 func queryServer(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	katagoManager := katago.GetManager()
 	kataNames := make([]model.ServerInfoItem, 0)
 	kataConfigs := make([]model.ServerInfoItem, 0)
 	kataWeights := make([]model.ServerInfoItem, 0)
 	for _, bin := range katagoManager.Bins {
+		if !katagoManager.IsAvailableResource(bin) {
+			continue
+		}
 		kataNames = append(kataNames, model.ServerInfoItem{
 			Name:        bin.Name,
 			Description: bin.Description,
 		})
 	}
 	for _, weight := range katagoManager.Weights {
+		if !katagoManager.IsAvailableResource(weight) {
+			continue
+		}
 		kataWeights = append(kataWeights, model.ServerInfoItem{
 			Name:        weight.Name,
 			Description: weight.Description,
 		})
 	}
 	for _, configItem := range katagoManager.Configs {
+		if !katagoManager.IsAvailableResource(configItem) {
+			continue
+		}
 		kataConfigs = append(kataConfigs, model.ServerInfoItem{
 			Name:        configItem.Name,
 			Description: configItem.Description,

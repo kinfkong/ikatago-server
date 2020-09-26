@@ -20,6 +20,7 @@ type BinConfig struct {
 	Path        string  `json:"path"`
 	Runner      *string `json:"runner"`
 	Description *string `json:"description"`
+	Optional    bool    `json:"optional"`
 }
 
 // WeightConfig the bin configs
@@ -27,6 +28,7 @@ type WeightConfig struct {
 	Name        string  `json:"name"`
 	Path        string  `json:"path"`
 	Description *string `json:"description"`
+	Optional    bool    `json:"optional"`
 }
 
 // ConfigConfig the bin configs
@@ -34,6 +36,7 @@ type ConfigConfig struct {
 	Name        string  `json:"name"`
 	Path        string  `json:"path"`
 	Description *string `json:"description"`
+	Optional    bool    `json:"optional"`
 }
 
 // Manager managers the katagos
@@ -73,27 +76,27 @@ func NewManager(configObject *viper.Viper) *Manager {
 	for _, bin := range manager.Bins {
 		if bin.Runner != nil && *bin.Runner == "aistudio-runner" {
 			// special the path is a directly
-			if !utils.DirectoryExists(bin.Path) {
+			if !utils.DirectoryExists(bin.Path) && !bin.Optional {
 				log.Printf("ERROR the path %s does not exist or not a directory\n", bin.Path)
 				return nil
 			}
 		} else if bin.Runner != nil && *bin.Runner == "cmd" {
 			// nothing to check
 		} else {
-			if !utils.FileExists(bin.Path) {
+			if !utils.FileExists(bin.Path) && !bin.Optional {
 				log.Printf("ERROR the path %s does not exist or not a file\n", bin.Path)
 				return nil
 			}
 		}
 	}
 	for _, weight := range manager.Weights {
-		if !utils.FileExists(weight.Path) {
+		if !utils.FileExists(weight.Path) && !weight.Optional {
 			log.Printf("ERROR the path %s does not exist or not a file\n", weight.Path)
 			return nil
 		}
 	}
 	for _, config := range manager.Configs {
-		if !utils.FileExists(config.Path) {
+		if !utils.FileExists(config.Path) && !config.Optional {
 			log.Printf("ERROR the path %s does not exist or not a file\n", config.Path)
 			return nil
 		}
@@ -216,4 +219,18 @@ func (m *Manager) Run(binName string, subcommands []string) (*exec.Cmd, error) {
 	} else {
 		return nil, errors.New("not_support_runner")
 	}
+}
+
+// IsAvailableResource checks if the resource is available or not
+func (m *Manager) IsAvailableResource(item interface{}) bool {
+	if v, ok := item.(BinConfig); ok {
+		return utils.FileExists(v.Path) || utils.DirectoryExists(v.Path)
+	}
+	if v, ok := item.(WeightConfig); ok {
+		return utils.FileExists(v.Path)
+	}
+	if v, ok := item.(ConfigConfig); ok {
+		return utils.FileExists(v.Path)
+	}
+	return false
 }
