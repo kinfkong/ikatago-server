@@ -43,15 +43,18 @@ const newWorld = {
 newWorld.platforms = []
 const tokens = []
 for (const platform of world.platforms) {
-    const token = jwt.sign({ 
-        dataEncryptKeyPrefix: platform.token.dataEncryptKeyPrefix 
-    }, 
-    privateKey, { 
+    const signStuff = { 
         algorithm: 'RS256', 
         expiresIn: Math.round((new Date(platform.token.expiresAt).getTime() - new Date().getTime()) / 1000), 
         issuer: issuer, 
-        audience: platform.name 
-    })
+        audience: platform.name
+    }
+    if (platform.token.username) {
+        signStuff.subject = platform.token.username
+    }
+    const token = jwt.sign({ 
+        dataEncryptKeyPrefix: platform.token.dataEncryptKeyPrefix 
+    }, privateKey, signStuff)
     if (platform.oss && platform.oss.data) {
         platform.oss.encryptedData = encrypt(platform.token.dataEncryptKeyPrefix + '#ikatago', JSON.stringify(platform.oss.data))
         delete platform.oss.data

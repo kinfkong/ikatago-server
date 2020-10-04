@@ -25,7 +25,7 @@ update_file() {
     fi
 }
 
-update_file ./data/weights/40b-large.bin.gz https://ikatago-resources.oss-cn-beijing.aliyuncs.com/40b384.bin.gz & 
+# update_file ./data/weights/40b-large.bin.gz https://ikatago-resources.oss-cn-beijing.aliyuncs.com/40b384.bin.gz & 
 update_file ./ikatago-server https://ikatago-resources.oss-cn-beijing.aliyuncs.com/ikatago-server 6489dcd1de2ea4975aa0d3db212b2e7e
 
 

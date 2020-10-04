@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -126,7 +127,9 @@ func NewManager(configObject *viper.Viper) *Manager {
 }
 
 func (m *Manager) runDirectly(binPath string, subcommands []string) (*exec.Cmd, error) {
-	return exec.Command(binPath, subcommands...), nil
+	cmd := exec.Command(binPath, subcommands...)
+	cmd.Env = os.Environ()
+	return cmd, nil
 }
 
 func (m *Manager) runByCmd(cmd string, subcommands []string) (*exec.Cmd, error) {

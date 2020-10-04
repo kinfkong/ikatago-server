@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -98,6 +99,16 @@ func validateToken(tokenString string, publicKey string) (jwt.MapClaims, error) 
 		expV, _ = exp.Int64()
 	}
 	log.Printf("Token will expires at: %v\n", time.Unix(expV, 0))
+	expireDate := time.Unix(expV, 0)
+	go func() {
+		for {
+			now := time.Now()
+			if now.After(expireDate) {
+				log.Fatal("Token expired")
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
 	return claims, err
 }
 
@@ -122,6 +133,10 @@ func parseArgs() {
 func main() {
 	fmt.Printf("Server Version: %s\n", utils.ServerVersion)
 	parseArgs()
+
+	os.Setenv("IKATAGO_PLATFORM_NAME", config.GetConfig().GetString("platform.name"))
+	os.Setenv("IKATAGO_PLATFORM_TOKEN", config.GetConfig().GetString("platform.token"))
+
 	platform, err := getPlatformFromWorld()
 	if err != nil {
 		log.Fatal(err)
