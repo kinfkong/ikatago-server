@@ -1,0 +1,83 @@
+server:
+  listen: 0.0.0.0:2222
+  
+katago:
+  bins:
+    - name: katago-1.5.0
+      path: ./data/bins/katago-1.5.0
+      runner: aistudio-runner
+      description: v1.5.0版本的katago
+    - name: katago-1.6.1
+      path: ./data/bins/katago-1.6.1
+      runner: aistudio-runner
+      description: v1.6.1版本的katago
+    - name: katago-1.3.4
+      path: ./data/bins/katago-1.3.4
+      runner: aistudio-runner
+      description: v1.3.4版本的katago, 支持动态修改pda, 让子专用
+  weights:
+    - name: 20b
+      path: ./data/weights/20b.bin.gz
+      description: 20b权重
+    - name: 30b
+      path: ./data/weights/30b.bin.gz
+      description: 30b权重
+    - name: 40b
+      path: ./data/weights/40b.bin.gz
+      description: 40b权重, 40b256-509
+    - name: 40b-large
+      path: ../data/data54610/40b-large.bin.gz
+      description: 胖权，即40b384
+      optional: true
+    - name: 20b191
+      path: ../data/data54610/20b191.bin.gz
+      description: 20b191，让子棋常用权重，适合让多子
+      optional: true
+    - name: 20b297
+      path: ../data/data54610/20b297.bin.gz
+      description: 20b297，让子棋常用权重
+      optional: true
+  configs:
+    - name: default_gtp
+      path: ./data/configs/default_gtp.cfg
+      description: 默认配置
+    - name: 10spermove
+      path: ./data/configs/10spermove.cfg
+      description: 10秒一步的配置，用于对弈
+    - name: 2stones_handicap
+      path: ./data/configs/2stones_handicap.cfg
+      description: 让子棋让2子配置
+    - name: 3stones_handicap
+      path: ./data/configs/3stones_handicap.cfg
+      description: 让子棋让3子配置
+    - name: 4stones_handicap
+      path: ./data/configs/4stones_handicap.cfg
+      description: 让子棋让4子配置
+    - name: 5stones_handicap
+      path: ./data/configs/5stones_handicap.cfg
+      description: 让子棋让5子配置
+    - name: 6stones_handicap
+      path: ./data/configs/6stones_handicap.cfg
+      description: 让子棋让6子配置
+    - name: 7+stones_handicap
+      path: ./data/configs/7+stones_handicap.cfg
+      description: 让子棋让7子及以上的配置
+
+  defaultBinName: katago-1.6.1
+  defaultWeightName: 40b
+  defaultConfigName: default_gtp
+  customConfigDir: /home/aistudio/user-data
+
+use_nat: frp
+
+nats: # only the name configured in "user_nat" will be used
+  frp:
+    type: frp
+    config_file: ./config/frpc.txt
+  direct: 
+    type: direct
+    host: 192.168.1.222 # the host or ip that you can connect this server directly
+    port: 2222 # generally, it should equals to the server listen port
+
+users:
+  file: ./userlist.txt

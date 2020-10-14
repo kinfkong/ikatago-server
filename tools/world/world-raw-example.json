@@ -16,7 +16,7 @@
                     "accessSecret": "xxxxx"
                 }
             }
-        }
+        }   
     }, 
     {
         "name": "colab",
