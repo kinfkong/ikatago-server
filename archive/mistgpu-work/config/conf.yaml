@@ -1,0 +1,37 @@
+server:
+  listen: 0.0.0.0:55504
+  
+katago:
+  bins:
+    - name: katago-1.6.1
+      path: ./data/bins/katago-1.6.1
+      description: v1.6.1版本的katago
+  weights:
+    - name: 20b
+      path: ./data/weights/20b.bin.gz
+      description: 20b权重
+    - name: 40b
+      path: ./data/weights/40b.bin.gz
+  configs:
+    - name: gtp_2cards
+      path: ./data/configs/gtp_2cards.cfg
+      description: 默认配置
+
+  defaultBinName: katago-1.6.1
+  defaultWeightName: 40b
+  defaultConfigName: gtp_2cards
+  customConfigDir: ./user-data
+
+use_nat: direct
+
+nats: # only the name configured in "user_nat" will be used
+  frp:
+    type: frp
+    config_file: ./config/frpc.txt
+  direct: 
+    type: direct
+    host: gpu48.mistgpu.com # the host or ip that you can connect this server directly
+    port: 55504 # generally, it should equals to the server listen port
+
+users:
+  file: ./userlist.txt

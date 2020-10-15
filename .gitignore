@@ -5,3 +5,4 @@
 /userlist.txt
 /tools/world/node_modules
 /bin
+/archive/*/data/weights/*
