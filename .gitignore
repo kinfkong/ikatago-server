@@ -6,3 +6,5 @@
 /tools/world/node_modules
 /bin
 /archive/*/data/weights/*
+/archive/work
+/archive/*.zip

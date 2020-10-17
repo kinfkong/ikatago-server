@@ -36,8 +36,8 @@ for (const platform of world.platforms) {
     if (platform.name !== 'aistudio-8v') {
         continue
     }
-    const startDate = new Date('2020-10-12T08:30+08:00')
-    const endDate = new Date('2020-10-16T00:00+08:00')
+    const startDate = new Date('2020-10-16T08:30+08:00')
+    const endDate = new Date('2020-10-22T00:00+08:00')
     const duration = Math.round(2.5 * 3600 * 1000)
     let currentDate = startDate
     while (currentDate < endDate) {
@@ -55,7 +55,7 @@ for (const platform of world.platforms) {
             dataEncryptKeyPrefix: platform.token.dataEncryptKeyPrefix 
         }, privateKey, signStuff)
         if (platform.oss && platform.oss.data) {
-            platform.oss.encryptedData = encrypt(platform.token.dataEncryptKeyPrefix + '#ikatago', JSON.stringify(platform.oss.data))
+            platform.oss.encryptedData = encrypt(platform.token.dataEncryptKeyPrefix + '#new-ikatago', JSON.stringify(platform.oss.data))
             delete platform.oss.data
         }
         tokens.push({

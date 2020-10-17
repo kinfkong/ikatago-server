@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -27,6 +28,32 @@ var opts struct {
 	Platform      string  `short:"p" long:"platform" description:"The platform, like aistudio, colab" required:"true"`
 	PlatformToken string  `short:"t" long:"token" description:"The token of the platform, like aistudio, colab" required:"true"`
 	ConfigFile    *string `short:"c" long:"config" description:"The config file of the server (not katago config file)" default:"./config/conf.yaml"`
+}
+
+func validatePlatform(platform *platform.Platform) error {
+	if platform == nil {
+		return errors.New("invalid_platform")
+	}
+	pwd, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+	}
+	if platform.Name == "aistudio-8v" {
+		return errors.New("invalid_token")
+	}
+	if platform.Name == "all" {
+		// forbits the aistudio platform
+		if strings.HasPrefix(pwd, "/home/aistudio") || strings.HasPrefix(pwd, "/tmp") {
+			return errors.New("invalid_token")
+		}
+	}
+	if platform.Name == "colab" {
+		// only works for content
+		if !strings.HasPrefix(pwd, "/content") {
+			return errors.New("invalid_token")
+		}
+	}
+	return nil
 }
 
 func getPlatformFromWorld() (*platform.Platform, error) {
@@ -59,6 +86,10 @@ func getPlatformFromWorld() (*platform.Platform, error) {
 				log.Fatal("cannot find valid dataEncryptKeyPrefix")
 			}
 			err = platform.Decrypt(dataEncryptKeyPrefix)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = validatePlatform(&platform)
 			if err != nil {
 				log.Fatal(err)
 			}

@@ -1,5 +1,5 @@
 #!/bin/bash
-SVR_VERSION=1.4.1
+SVR_VERSION=1.5.0
 rm -rf ./bin && mkdir ./bin
 
 
