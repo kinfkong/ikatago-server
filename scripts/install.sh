@@ -18,8 +18,17 @@ then
 elif [[ "$GPU_NAME" == *"V100"* ]]
 then
     GPU_NAME="v100"
+elif [[ "$GPU_NAME" == *"RTX 3090"* ]]
+then
+    GPU_NAME="3090"
 fi
-CUDA_VERSION=$(cat /usr/local/cuda/version.txt | sed "s/CUDA Version \(.*\)\..*$/\1/g")
+
+if [ -f /usr/local/cuda/version.txt  ]
+then
+    CUDA_VERSION=$(cat /usr/local/cuda/version.txt | sed "s/CUDA Version \(.*\)\..*$/\1/g")
+else
+    CUDA_VERSION=$(nvidia-smi -q | grep "CUDA Version" | sed "s/^CUDA Version.*:[^0-9]*\(.*\)\.\(.*\)\.*$/\1.\2/g")
+fi
 PACKAGE=$OS_NAME-cuda-$CUDA_VERSION
 KATAGO_VERSION=1.6.1
 GPU_NUM=$(($(nvidia-smi -q | grep "Attached GPUs" | cut -d':' -f2)))
@@ -72,7 +81,7 @@ then
     exit -1
 fi
 echo "Downloading configs..."
-update_file ./resources/configs.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/configs.zip fa441d0598d4023506413b9b6adb57b6
+update_file ./resources/configs.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/configs.zip 453070e588e1bcb5e23993b77264e8a2
 if [ $? -ne 0 ]
 then
     echo "Failed to download the configs."
@@ -109,7 +118,7 @@ else
     cardsfolder=$GPU_NUM"cards"
 fi
 
-if [ -d "$cardsfolder-$GPU_NAME" ]
+if [ -d "./resources/configs/$cardsfolder-$GPU_NAME" ]
 then 
     cardsfolder="$cardsfolder-$GPU_NAME"
 fi
