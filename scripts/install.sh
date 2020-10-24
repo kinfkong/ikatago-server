@@ -21,6 +21,9 @@ then
 elif [[ "$GPU_NAME" == *"RTX 3090"* ]]
 then
     GPU_NAME="3090"
+elif [[ "$GPU_NAME" == *"A100"* ]]
+then
+    GPU_NAME="A100"
 fi
 
 if [ -f /usr/local/cuda/version.txt  ]
@@ -29,12 +32,20 @@ then
 else
     CUDA_VERSION=$(nvidia-smi -q | grep "CUDA Version" | sed "s/^CUDA Version.*:[^0-9]*\(.*\)\.\(.*\)\.*$/\1.\2/g")
 fi
-PACKAGE=$OS_NAME-cuda-$CUDA_VERSION
+ENV_NAME=$OS_NAME-cuda-$CUDA_VERSION
 KATAGO_VERSION=1.6.1
 GPU_NUM=$(($(nvidia-smi -q | grep "Attached GPUs" | cut -d':' -f2)))
-echo "System Env: " $PACKAGE
+echo "System Env: " $ENV_NAME
 echo "GPU Info: " $GPU_NAME x $GPU_NUM
-
+PACKAGE=$ENV_NAME
+if [ "$GPU_NAME" == "A100" ] || [ "$GPU_NAME" == "3090" ]
+then
+    if [ "$CUDA_VERSION" != "11.1" ]
+    then
+        PACKAGE=$OS_NAME-cuda-"11.1-with-cuda"
+    fi
+fi
+echo "USING PACKAGE: $PACKAGE"
 update_file() {
     FILE_PATH=$1
     FILE_URL=$2
