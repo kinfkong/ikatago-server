@@ -1,15 +1,5 @@
 #!/bin/bash
 OS_NAME=$(cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME="\(.*\)"/\1/g')
-if [[ "$OS_NAME" = "Ubuntu 18"* ]]
-then
-    OS_NAME=ubuntu-18
-elif [[ "$OS_NAME" = "Ubuntu 16"* ]]
-then
-    OS_NAME=ubuntu-16
-else
-    echo "only ubuntu 16 or ubuntu 18 are supported"
-    exit -1
-fi
 
 GPU_NAME=$(nvidia-smi -q | grep "Product Name" | head -n 1 | cut -d":" -f2 | xargs)
 if [[ "$GPU_NAME" == *"2080 Ti"* ]]
@@ -33,18 +23,11 @@ else
     CUDA_VERSION=$(nvidia-smi -q | grep "CUDA Version" | sed "s/^CUDA Version.*:[^0-9]*\(.*\)\.\(.*\)\.*$/\1.\2/g")
 fi
 ENV_NAME=$OS_NAME-cuda-$CUDA_VERSION
-KATAGO_VERSION=1.6.1
+KATAGO_VERSIONS="1.6.1 1.7.0"
 GPU_NUM=$(($(nvidia-smi -q | grep "Attached GPUs" | cut -d':' -f2)))
 echo "System Env: " $ENV_NAME
 echo "GPU Info: " $GPU_NAME x $GPU_NUM
-PACKAGE=$ENV_NAME
-if [ "$GPU_NAME" == "A100" ] || [ "$GPU_NAME" == "3090" ]
-then
-    if [ "$CUDA_VERSION" != "11.1" ]
-    then
-        PACKAGE=$OS_NAME-cuda-"11.1-with-cuda"
-    fi
-fi
+PACKAGE=ubuntu-cuda-$CUDA_VERSION
 echo "USING PACKAGE: $PACKAGE"
 update_file() {
     FILE_PATH=$1
@@ -77,29 +60,32 @@ update_file() {
 }
 mkdir -p ./resources
 echo "Downloading engines..."
-update_file ./resources/katago-$KATAGO_VERSION-$PACKAGE.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/katago-$KATAGO_VERSION-$PACKAGE.zip
-if [ $? -ne 0 ]
-then
-    echo "Failed to download the engines."
-    exit -1
-fi
+for KATAGO_VERSION in $KATAGO_VERSIONS
+do
+    update_file ./resources/katago-$KATAGO_VERSION-$PACKAGE.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/katago-$KATAGO_VERSION-$PACKAGE.zip
+    if [ $? -ne 0 ]
+    then
+        echo "Failed to download the engines."
+        exit -1
+    fi
+done
 
 echo "Downloading weights..."
-update_file ./resources/weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/weights.zip 5268d0ee93bbff1be25b472beb3c0022
+update_file ./resources/weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/weights.zip 19adc7c416bafbb9c20d25738cb17af6
 if [ $? -ne 0 ]
 then
     echo "Failed to download the weights."
     exit -1
 fi
 echo "Downloading configs..."
-update_file ./resources/configs.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/configs.zip 453070e588e1bcb5e23993b77264e8a2
+update_file ./resources/configs.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/configs.zip 43cc69565e7cdf768047c70d0c1ee0f4
 if [ $? -ne 0 ]
 then
     echo "Failed to download the configs."
     exit -1
 fi
 echo "Downloading work..."
-update_file ./resources/linux-work.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/linux-work.zip 6cce6794adf1d66c29878d0f6818e16d
+update_file ./resources/linux-work.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/linux-work.zip 6394afd70a5225b95bffd4f017c38f92
 if [ $? -ne 0 ]
 then
     echo "Failed to download the work."
@@ -112,7 +98,10 @@ cd ./resources
 echo "Installing weights..."
 rm -rf weights && unzip weights.zip >/dev/null 2>&1
 echo "Installing engines..."
-rm -rf katago-$KATAGO_VERSION-$PACKAGE && unzip katago-$KATAGO_VERSION-$PACKAGE.zip  >/dev/null 2>&1
+for KATAGO_VERSION in $KATAGO_VERSIONS
+do
+    rm -rf katago-$KATAGO_VERSION-$PACKAGE && unzip katago-$KATAGO_VERSION-$PACKAGE.zip  >/dev/null 2>&1
+done
 echo "Installing others..."
 rm -rf linux-work && unzip linux-work.zip >/dev/null 2>&1
 rm -rf configs && unzip configs.zip >/dev/null 2>&1
@@ -135,6 +124,9 @@ then
 fi
 cp ./resources/configs/$cardsfolder/* ./work/data/configs/
 mkdir -p ./work/data/bins
-mv ./resources/katago-$KATAGO_VERSION-$PACKAGE ./work/data/bins/katago-$KATAGO_VERSION
+for KATAGO_VERSION in $KATAGO_VERSIONS
+do
+    mv ./resources/katago-$KATAGO_VERSION-$PACKAGE ./work/data/bins/katago-$KATAGO_VERSION
+done
 
 echo "Install Successfully, now you can run the ikatago-server"

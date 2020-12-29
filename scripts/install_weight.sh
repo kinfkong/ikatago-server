@@ -1,9 +1,9 @@
 #!/bin/bash
 WEIGHTS_TO_INSTALL=$@
-WEIGHT_SERVER_PORT=8022
-WEIGHT_SERVER_HOST=106.13.32.114
-WEIGHT_SERVER_USER=aistudio
-WEIGHT_REMOTE_STORAGE_PATH=/home/aistudio/weights
+WEIGHT_SERVER_PORT=22
+WEIGHT_SERVER_HOST=183.245.13.86
+WEIGHT_SERVER_USER=iktg
+WEIGHT_REMOTE_STORAGE_PATH=/home/iktg/weights
 WEIGHT_SERVER_KEY=./resources/weight_scripts/weight_server_key.pem
 WEIGHT_SERVER_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $WEIGHT_SERVER_KEY"
 scp_weight() {
