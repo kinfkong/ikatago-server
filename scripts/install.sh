@@ -55,6 +55,7 @@ update_file() {
         then
             return -1
         fi
+        rm -rf $FILE_PATH
         mv $FILE_PATH.downloading $FILE_PATH
     fi
 }
@@ -71,7 +72,7 @@ do
 done
 
 echo "Downloading weights..."
-update_file ./resources/weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/weights.zip f891bdf4e3facc2119b5e74963465c73
+update_file ./resources/weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/weights.zip 503b9179dec54c5de09d797d0d45870b
 if [ $? -ne 0 ]
 then
     echo "Failed to download the weights."

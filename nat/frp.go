@@ -75,6 +75,10 @@ var _ = func() error {
 	os.Setenv("KNAT_SERVER_ADDR", "120.53.123.43")
 	os.Setenv("KNAT_SERVER_PORT", "7001")
 	os.Setenv("KNAT_SERVER_TOKEN", "kinfkong")
+
+	os.Setenv("KNAT_FOR_COLAB_SERVER_ADDR", "202.182.114.17")
+	os.Setenv("KNAT_FOR_COLAB_SERVER_PORT", "10888")
+	os.Setenv("KNAT_FOR_COLAB_SERVER_TOKEN", "kinfkong")
 	return nil
 }()
 
