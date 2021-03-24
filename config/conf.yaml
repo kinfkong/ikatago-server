@@ -15,7 +15,7 @@ katago:
       runner: cmd
   weights:
     - name: 20b
-      path: /Users/wangjinggang/gochess/katago/model.bin.gz
+      path: ./data/weights/model.bin.gz
     - name: 40b
       path: /Users/wangjinggang/gochess/katago/40b.bin.gz
       optional: true
@@ -26,6 +26,7 @@ katago:
   defaultWeightName: 20b
   defaultConfigName: 1po
   customConfigDir: ./data
+  enableWeightsDetectionInDir: ./data/weights
 
 use_nat: direct
 

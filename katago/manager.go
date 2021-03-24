@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -42,13 +43,14 @@ type ConfigConfig struct {
 
 // Manager managers the katagos
 type Manager struct {
-	Bins              []BinConfig    `json:"bins"`
-	Weights           []WeightConfig `json:"weights"`
-	Configs           []ConfigConfig `json:"configs"`
-	DefaultBinName    string         `json:"defaultBinName"`
-	DefaultWeightName string         `json:"defaultWeightName"`
-	DefaultConfigName string         `json:"defaultConfigName"`
-	CustomConfigDir   string         `json:"customConfigDir"`
+	Bins                        []BinConfig    `json:"bins"`
+	Weights                     []WeightConfig `json:"weights"`
+	Configs                     []ConfigConfig `json:"configs"`
+	DefaultBinName              string         `json:"defaultBinName"`
+	DefaultWeightName           string         `json:"defaultWeightName"`
+	DefaultConfigName           string         `json:"defaultConfigName"`
+	EnableWeightsDetectionInDir *string        `json:"enableWeightsDetectionInDir"`
+	CustomConfigDir             string         `json:"customConfigDir"`
 }
 
 var managerInstance *Manager
@@ -63,6 +65,28 @@ func GetManager() *Manager {
 		managerInstance = NewManager(config.GetConfig().Sub("katago"))
 	}
 	return managerInstance
+}
+
+func walkMatch(root, pattern string) ([]string, error) {
+	var matches []string
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if matched, err := filepath.Match(pattern, filepath.Base(path)); err != nil {
+			return err
+		} else if matched {
+			matches = append(matches, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return matches, nil
 }
 
 // NewManager creates the kata manager
@@ -89,6 +113,35 @@ func NewManager(configObject *viper.Viper) *Manager {
 				return nil
 			}
 		}
+	}
+	if manager.EnableWeightsDetectionInDir != nil {
+		files, err := walkMatch(*manager.EnableWeightsDetectionInDir, "*.bin.gz")
+		if err == nil {
+			detectedFiles := make([]string, 0)
+			for _, file := range files {
+				ignored := false
+				for _, weight := range manager.Weights {
+					a1, _ := filepath.Abs(weight.Path)
+					a2, _ := filepath.Abs(file)
+					if a1 == a2 {
+						ignored = true
+						break
+					}
+				}
+				if !ignored {
+					detectedFiles = append(detectedFiles, file)
+				}
+			}
+			for _, detectedFile := range detectedFiles {
+				basename := filepath.Base(detectedFile)
+				manager.Weights = append(manager.Weights, WeightConfig{
+					Path:     detectedFile,
+					Optional: true,
+					Name:     strings.TrimSuffix(basename, ".bin.gz"),
+				})
+			}
+		}
+
 	}
 	for _, weight := range manager.Weights {
 		if !utils.FileExists(weight.Path) && !weight.Optional {
