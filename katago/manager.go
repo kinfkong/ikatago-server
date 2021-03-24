@@ -134,10 +134,12 @@ func NewManager(configObject *viper.Viper) *Manager {
 			}
 			for _, detectedFile := range detectedFiles {
 				basename := filepath.Base(detectedFile)
+				name := strings.TrimSuffix(basename, ".bin.gz")
+				log.Printf("Detected new weight %s with name [%s]", detectedFile, name)
 				manager.Weights = append(manager.Weights, WeightConfig{
 					Path:     detectedFile,
 					Optional: true,
-					Name:     strings.TrimSuffix(basename, ".bin.gz"),
+					Name:     name,
 				})
 			}
 		}

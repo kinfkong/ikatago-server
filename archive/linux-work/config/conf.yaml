@@ -3,13 +3,9 @@ server:
   
 katago:
   bins:
-    - name: katago-1.7.0
-      path: ./data/bins/katago-1.7.0/run-katago.sh
-      description: v1.7.0版本的katago
-      optional: true
-    - name: katago-1.8.0
-      path: ./data/bins/katago-1.8.0/run-katago.sh
-      description: v1.8.0版本的katago
+    - name: katago-1.8.1
+      path: ./data/bins/katago-1.8.1/run-katago.sh
+      description: v1.8.1版本的katago
   weights:
     - name: 20b
       path: ./data/weights/20b.bin.gz
@@ -57,10 +53,11 @@ katago:
       path: ./data/configs/7+stones_handicap.cfg
       description: 让子棋让7子及以上的配置
 
-  defaultBinName: katago-1.8.0
+  defaultBinName: katago-1.8.1
   defaultWeightName: 40b
   defaultConfigName: default_gtp 
   customConfigDir: ./user-data
+  enableWeightsDetectionInDir: ./data/weights
 
 use_nat: frp
 
