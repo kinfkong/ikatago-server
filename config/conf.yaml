@@ -26,7 +26,7 @@ katago:
   defaultWeightName: 20b
   defaultConfigName: 1po
   customConfigDir: ./data
-  enableWeightsDetectionInDir: ./data/weights
+  #enableWeightsDetectionInDir: ./data/weights
 
 use_nat: direct
 
