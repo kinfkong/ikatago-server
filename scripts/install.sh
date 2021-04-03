@@ -23,11 +23,15 @@ else
     CUDA_VERSION=$(nvidia-smi -q | grep "CUDA Version" | sed "s/^CUDA Version.*:[^0-9]*\(.*\)\.\(.*\)\.*$/\1.\2/g")
 fi
 ENV_NAME=$OS_NAME-cuda-$CUDA_VERSION
-KATAGO_VERSIONS="1.8.0"
+KATAGO_VERSIONS="1.8.1"
 GPU_NUM=$(($(nvidia-smi -q | grep "Attached GPUs" | cut -d':' -f2)))
 echo "System Env: " $ENV_NAME
 echo "GPU Info: " $GPU_NAME x $GPU_NUM
 PACKAGE=ubuntu-cuda-$CUDA_VERSION
+if [ "$1" != "" ]
+then
+    PACKAGE=$1
+fi
 echo "USING PACKAGE: $PACKAGE"
 update_file() {
     FILE_PATH=$1
@@ -72,7 +76,7 @@ do
 done
 
 echo "Downloading weights..."
-update_file ./resources/weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/weights.zip 503b9179dec54c5de09d797d0d45870b
+update_file ./resources/weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/weights.zip 8e633a8706d3a40781863720035102c9
 if [ $? -ne 0 ]
 then
     echo "Failed to download the weights."
@@ -86,7 +90,7 @@ then
     exit -1
 fi
 echo "Downloading work..."
-update_file ./resources/linux-work.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/linux-work.zip dc38bbb4371f0a1068a9c347e3bf2001
+update_file ./resources/linux-work.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/linux-work.zip 4a151ee0b5434eff10f46d18c237691f
 if [ $? -ne 0 ]
 then
     echo "Failed to download the work."

@@ -44,3 +44,6 @@ nats: # only the name configured in "user_nat" will be used
 
 users:
   file: ./userlist.txt
+
+report:
+  enabled: true
