@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/gliderlabs/ssh"
+	"github.com/google/uuid"
 	"github.com/kinfkong/ikatago-server/config"
+	"github.com/kinfkong/ikatago-server/report"
 )
 
 // UserInfo represents the user info
@@ -101,12 +105,72 @@ func RunAsync() error {
 			log.Printf("INFO user [%s] session done\n", s.User())
 			return
 		}
+		sessionID := uuid.New().String()
+		startedAt := time.Now()
+		report.GetService().AddToQueue(report.ReportLog{
+			SessionID:       sessionID,
+			Platform:        report.GetService().PlatformName,
+			ConnectUsername: s.User(),
+			EventType:       "SESSION_START",
+			EventStartedAt:  startedAt,
+			EventEndedAt:    startedAt,
+			Duration:        0,
+		})
+		ended := make(chan bool)
+		// monitor
+		go func() {
+			for {
+				select {
+				case <-ended:
+					return
+				default:
+					// Do other stuff
+				}
+				time.Sleep(5 * time.Second)
+				now := time.Now()
+				duration := now.Sub(startedAt).Seconds()
+				report.GetService().AddToQueue(report.ReportLog{
+					SessionID:       sessionID,
+					Platform:        report.GetService().PlatformName,
+					ConnectUsername: s.User(),
+					EventType:       "SESSION_ONGOING",
+					EventStartedAt:  startedAt,
+					EventEndedAt:    now,
+					Duration:        int(math.Ceil(duration)),
+				})
+			}
+		}()
 		if err := cmd.Run(); err != nil {
 			log.Printf("INFO user [%s] session done\n", s.User())
 			log.Println(err)
+			now := time.Now()
+			duration := now.Sub(startedAt).Seconds()
+			report.GetService().AddToQueue(report.ReportLog{
+				SessionID:       sessionID,
+				Platform:        report.GetService().PlatformName,
+				ConnectUsername: s.User(),
+				EventType:       "SESSION_END",
+				EventStartedAt:  startedAt,
+				EventEndedAt:    now,
+				Duration:        int(math.Ceil(duration)),
+			})
+			ended <- true
 			return
 		}
 		log.Printf("INFO user [%s] session done\n", s.User())
+		now := time.Now()
+		duration := now.Sub(startedAt).Seconds()
+		report.GetService().AddToQueue(report.ReportLog{
+			SessionID:       sessionID,
+			Platform:        report.GetService().PlatformName,
+			ConnectUsername: s.User(),
+			EventType:       "SESSION_END",
+			EventStartedAt:  startedAt,
+			EventEndedAt:    now,
+			Duration:        int(math.Ceil(duration)),
+		})
+		ended <- true
+
 	})
 
 	passwordAuthOption := ssh.PasswordAuth(func(ctx ssh.Context, password string) bool {

@@ -10,6 +10,7 @@ require (
 	github.com/fatedier/frp v0.0.0-00010101000000-000000000000
 	github.com/fatedier/golib v0.0.0-20181107124048-ff8cd814b049
 	github.com/gliderlabs/ssh v0.3.0
+	github.com/google/uuid v1.2.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/mergermarket/go-pkcs7 v0.0.0-20170926155232-153b18ea13c9
 	github.com/rakyll/statik v0.1.1

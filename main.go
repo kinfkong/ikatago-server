@@ -18,6 +18,7 @@ import (
 	"github.com/kinfkong/ikatago-server/model"
 	"github.com/kinfkong/ikatago-server/nat"
 	"github.com/kinfkong/ikatago-server/platform"
+	"github.com/kinfkong/ikatago-server/report"
 	"github.com/kinfkong/ikatago-server/sshd"
 	"github.com/kinfkong/ikatago-server/storage"
 	"github.com/kinfkong/ikatago-server/utils"
@@ -224,6 +225,8 @@ func main() {
 
 	fmt.Printf("Congratulations! Now ikatago-server is running successfully, waiting for your requests ...\n\n")
 
+	// start reporting
+	go report.GetService().StartReport()
 	for {
 		// wait for the services
 		time.Sleep(1000 * time.Millisecond)

@@ -1,5 +1,5 @@
 server:
-  listen: 0.0.0.0:2222
+  listen: 0.0.0.0:2223
   
 katago:
   bins:
@@ -12,6 +12,9 @@ katago:
       runner: aistudio-runner # optional, only baidu aistudio needs this. 
     - name: katago-remote
       path: /Users/wangjinggang/gochess/remote/katago-rent
+      runner: cmd
+    - name: sleep
+      path: ./data/bins/mock_katago.sh
       runner: cmd
   weights:
     - name: 20b
@@ -28,12 +31,12 @@ katago:
   customConfigDir: ./data
   #enableWeightsDetectionInDir: ./data/weights
 
-use_nat: direct
+use_nat: frpBykinfkong
 
 nats: # only the name configured in "user_nat" will be used
   frpBykinfkong:
     type: frp
-    config_file: ./config/frpc.ini
+    config_file: ./config/frpc.txt
   frpBynatfrp:
     type: frp
     config_file: ./config/nat-frpc.ini
@@ -46,4 +49,4 @@ users:
   file: ./userlist.txt
 
 report:
-  enabled: true
+  url: "http://"
