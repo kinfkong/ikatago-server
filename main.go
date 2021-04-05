@@ -226,6 +226,7 @@ func main() {
 	fmt.Printf("Congratulations! Now ikatago-server is running successfully, waiting for your requests ...\n\n")
 
 	// start reporting
+	report.GetService().PlatformName = platform.Name
 	go report.GetService().StartReport()
 	for {
 		// wait for the services

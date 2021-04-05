@@ -37,7 +37,7 @@ func (service *Service) StartReport() {
 	failedCount := 0
 	for {
 		batchData := service.queue.WaitTimeoutOrMax(time.Duration(time.Second*5), 100)
-		log.Printf("fowarding: %d messages", len(batchData))
+		// log.Printf("fowarding: %d messages", len(batchData))
 		// do real sent
 		if len(batchData) > 0 {
 			data, _ := json.Marshal(batchData)
@@ -62,7 +62,9 @@ func (server *Service) doSendWithRetry(data []byte) (string, error) {
 	response := ""
 	for i = 0; i < 3 && reportUrl != ""; i++ {
 		var err error = nil
-		response, err = utils.DoHTTPRequest("POST", reportUrl+"?token="+token, map[string]string{}, data)
+		response, err = utils.DoHTTPRequest("POST", reportUrl+"?token="+token, map[string]string{
+			"Content-Type": "application/json",
+		}, data)
 		if err != nil {
 			log.Printf("ERROR failed to send request")
 			time.Sleep(100 * time.Millisecond)

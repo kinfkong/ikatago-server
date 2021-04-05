@@ -49,4 +49,4 @@ users:
   file: ./userlist.txt
 
 report:
-  url: "http://"
+  url: http://localhost:4200/api/ikatago/report-log/batch
