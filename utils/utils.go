@@ -23,7 +23,7 @@ func DoHTTPRequest(method string, url string, headers map[string]string, body []
 	}
 
 	command, _ := http2curl.GetCurlCommand(req)
-	log.Printf("DEBUG sending with http: %s\n", command)
+	// log.Printf("DEBUG sending with http: %s\n", command)
 	response, err := httpClient.Do(req)
 	if err != nil {
 		log.Printf("ERROR error requesting with http: %s, error: %v\n", command, err)
