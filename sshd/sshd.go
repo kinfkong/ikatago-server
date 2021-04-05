@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gliderlabs/ssh"
@@ -118,15 +119,24 @@ func RunAsync() error {
 		})
 		ended := make(chan bool)
 		// monitor
+		var wg sync.WaitGroup
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
+
+			shouldEnd := false
 			for {
 				select {
 				case <-ended:
-					return
+					shouldEnd = true
 				default:
 					// Do other stuff
 				}
-				time.Sleep(5 * time.Second)
+
+				if !shouldEnd {
+					time.Sleep(5 * time.Second)
+				}
+
 				now := time.Now()
 				duration := now.Sub(startedAt).Seconds()
 				report.GetService().AddToQueue(report.ReportLog{
@@ -138,11 +148,17 @@ func RunAsync() error {
 					EventEndedAt:    now,
 					Duration:        int(math.Ceil(duration)),
 				})
+				if shouldEnd {
+					return
+				}
 			}
 		}()
 		if err := cmd.Run(); err != nil {
 			log.Printf("INFO user [%s] session done\n", s.User())
 			log.Println(err)
+			ended <- true
+			wg.Wait()
+
 			now := time.Now()
 			duration := now.Sub(startedAt).Seconds()
 			report.GetService().AddToQueue(report.ReportLog{
@@ -154,10 +170,13 @@ func RunAsync() error {
 				EventEndedAt:    now,
 				Duration:        int(math.Ceil(duration)),
 			})
-			ended <- true
+
 			return
 		}
 		log.Printf("INFO user [%s] session done\n", s.User())
+		ended <- true
+		wg.Wait()
+
 		now := time.Now()
 		duration := now.Sub(startedAt).Seconds()
 		report.GetService().AddToQueue(report.ReportLog{
@@ -169,7 +188,6 @@ func RunAsync() error {
 			EventEndedAt:    now,
 			Duration:        int(math.Ceil(duration)),
 		})
-		ended <- true
 
 	})
 
