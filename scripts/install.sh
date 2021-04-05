@@ -90,7 +90,7 @@ then
     exit -1
 fi
 echo "Downloading work..."
-update_file ./resources/linux-work.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/linux-work.zip 4a151ee0b5434eff10f46d18c237691f
+update_file ./resources/linux-work.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/linux-work.zip bd0e3408ada19e666ef916daafd6dc5f
 if [ $? -ne 0 ]
 then
     echo "Failed to download the work."
