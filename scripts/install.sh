@@ -28,10 +28,10 @@ GPU_NUM=$(($(nvidia-smi -q | grep "Attached GPUs" | cut -d':' -f2)))
 echo "System Env: " $ENV_NAME
 echo "GPU Info: " $GPU_NAME x $GPU_NUM
 PACKAGE=ubuntu-cuda-$CUDA_VERSION
-if [ "$1" != "" ]
-then
-    PACKAGE=$1
-fi
+#if [ "$1" != "" ]
+#then
+#    PACKAGE=$1
+#fi
 echo "USING PACKAGE: $PACKAGE"
 update_file() {
     FILE_PATH=$1
