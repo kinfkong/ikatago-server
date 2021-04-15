@@ -1,0 +1,36 @@
+server:
+  listen: 0.0.0.0:2223
+  
+katago:
+  bins:
+    - name: gomoku-1.7.0
+      path: ./data/bins/gomoku-1.7.0/run-katago.sh
+      description: v1.7.0版本的五子棋katago
+  weights:
+  configs:
+    - name: default_gtp
+      path: ./data/configs/default_gtp.cfg
+      description: 默认配置
+
+  defaultBinName: gomoku-1.7.0
+  defaultWeightName: standard
+  defaultConfigName: default_gtp 
+  customConfigDir: ./user-data
+  enableWeightsDetectionInDir: ./data/weights
+
+use_nat: frp
+
+nats: # only the name configured in "user_nat" will be used
+  frp:
+    type: frp
+    config_file: ./config/frpc.txt
+  direct: 
+    type: direct
+    host: gpu48.mistgpu.com # the host or ip that you can connect this server directly
+    port: 2222 # generally, it should equals to the server listen port
+
+users:
+  file: ./userlist.txt
+
+report:
+  url: http://8.130.167.86:8080/api/ikatago/report-log/batch
