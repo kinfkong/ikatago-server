@@ -76,7 +76,7 @@ do
 done
 
 echo "Downloading weights..."
-update_file ./resources/weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-weights.zip 8e633a8706d3a40781863720035102c9
+update_file ./resources/gomoku-weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-weights.zip b8a00e134b7ed1782349ae476763b803
 if [ $? -ne 0 ]
 then
     echo "Failed to download the weights."
@@ -95,7 +95,7 @@ echo "Installing..."
 
 cd ./resources 
 echo "Installing weights..."
-rm -rf weights && unzip weights.zip >/dev/null 2>&1
+rm -rf gomoku-weights && unzip gomoku-weights.zip >/dev/null 2>&1
 echo "Installing engines..."
 for KATAGO_VERSION in $KATAGO_VERSIONS
 do
@@ -108,22 +108,25 @@ cd -
 rm -rf work
 mv ./resources/gomoku-work ./work
 mkdir -p ./work/data
-mv ./resources/weights ./work/data/
-
+mv ./resources/gomoku-weights ./work/data/weights
 
 mkdir -p ./work/data/configs
 rm -rf ./work/data/configs/default_gtp.cfg
 mv ./work/default.cfg ./work/data/configs/default_gtp.cfg
 SEARCH_THREAD_NUM=$(echo "$GPU_NUM*25" | bc -l)
 echo "Using Thread Num: $SEARCH_THREAD_NUM"
-sed -i "s/numSearchThreads = .*$/numSearchThreads = $SEARCH_THREAD_NUM/g" ./work/data/configs/default_gtp.cfg
+
+CMD="s/numSearchThreads = .*/numSearchThreads = $SEARCH_THREAD_NUM/g"
+sed -i "$CMD" ./work/data/configs/default_gtp.cfg
 echo "numNNServerThreadsPerModel = $GPU_NUM" >> ./work/data/configs/default_gtp.cfg
 
-for i in {1..$GPU_NUM}
+i=0
+while [ $i -lt $GPU_NUM ]
 do
-    x=$(echo "$i-1" | bc -l)
-    echo "gpuToUseThread$x = $x" >> ./work/data/configs/default_gtp.cfg
+    echo "gpuToUseThread$i = $i" >> ./work/data/configs/default_gtp.cfg
+    i=$(($i + 1))
 done
+
 
 mkdir -p ./work/data/bins
 for KATAGO_VERSION in $KATAGO_VERSIONS
