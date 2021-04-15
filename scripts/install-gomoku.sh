@@ -84,7 +84,7 @@ then
 fi
 
 echo "Downloading work..."
-update_file ./resources/gomoku-work.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-work.zip bd0e3408ada19e666ef916daafd6dc5f
+update_file ./resources/gomoku-work.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-work.zip 1c0a247017ad74a461d78fd56c8fe2c8
 if [ $? -ne 0 ]
 then
     echo "Failed to download the work."
