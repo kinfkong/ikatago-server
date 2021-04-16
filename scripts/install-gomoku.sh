@@ -113,7 +113,7 @@ mv ./resources/gomoku-weights ./work/data/weights
 mkdir -p ./work/data/configs
 rm -rf ./work/data/configs/default_gtp.cfg
 mv ./work/default.cfg ./work/data/configs/default_gtp.cfg
-SEARCH_THREAD_NUM=$(echo "$GPU_NUM*25" | bc -l)
+SEARCH_THREAD_NUM=$(($GPU_NUM * 25))
 echo "Using Thread Num: $SEARCH_THREAD_NUM"
 
 CMD="s/numSearchThreads = .*/numSearchThreads = $SEARCH_THREAD_NUM/g"

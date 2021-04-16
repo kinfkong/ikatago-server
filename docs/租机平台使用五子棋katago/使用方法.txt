@@ -13,7 +13,7 @@ d). 选按量付费, 然后创建
 a). 当创建完成时，返回个人中心：https://cloud.videojj.com/center/hire
 c). 你的实例里，有一个"Jupyter Notebook"的链接，点它
 d). 然后点"upload", 把ikatago-gomoku.ipynb上传上去
-c). 上传完成后，点击ikatago.ipynb打开notebook
+c). 上传完成后，点击ikatago-gomoku.ipynb打开notebook
 
 3. 安装和运行ikatago
 a). notebook里，分别有安装和运行的代码，分别点运行即可。
