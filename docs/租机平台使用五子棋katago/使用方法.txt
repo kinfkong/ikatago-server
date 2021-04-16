@@ -1,0 +1,28 @@
+只要支持notebook的租机平台都可以使用。
+比如极链云、智星云、恒源云、mistgpu等等。
+
+下面以极链云来说明，其它平台大同小异。
+
+1. 创建极链云机器实例
+a). 注册登录: https://cloud.videojj.com/center/hire
+b). GPU类型选一种
+c). 框架选择随便选，3090系列的话，cuda需要11.0以上
+d). 选按量付费, 然后创建
+
+2. 运行jupyter notebook
+a). 当创建完成时，返回个人中心：https://cloud.videojj.com/center/hire
+c). 你的实例里，有一个"Jupyter Notebook"的链接，点它
+d). 然后点"upload", 把ikatago-gomoku.ipynb上传上去
+c). 上传完成后，点击ikatago.ipynb打开notebook
+
+3. 安装和运行ikatago
+a). notebook里，分别有安装和运行的代码，分别点运行即可。
+
+4. 客户端连接:
+ikatago.exe --platform all --username xxx --password xxx 
+
+注意: 
+1). platform是"all"
+2). 不用的时候，记得在极云链上关掉实例，按时间收费的.
+
+
