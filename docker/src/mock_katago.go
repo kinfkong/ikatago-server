@@ -63,7 +63,11 @@ func main() {
 	go func() {
 		for {
 			var reader = bufio.NewReader(os.Stdin)
-			message, _ := reader.ReadString('\n')
+			message, err := reader.ReadString('\n')
+			if err != nil {
+				// log.Printf("ERROR failed to read from stdin. %+v\n", err)
+				os.Exit(0)
+			}
 			go runner.RunCmd(message)
 		}
 

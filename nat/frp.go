@@ -279,9 +279,21 @@ func (frp *FRP) RunAsync() error {
 		}
 	}()
 
-	return frp.waitUntilReady(60)
+	err := frp.waitUntilReady(60)
+	if err != nil {
+		return err
+	}
+	frp.checkProxyStatusAsync()
+	return nil
 }
-
+func (frp *FRP) checkProxyStatusAsync() {
+	go func() {
+		for {
+			frp.waitUntilReady(60)
+			time.Sleep(time.Second)
+		}
+	}()
+}
 func (frp *FRP) waitUntilReady(timeout int) error {
 	ready := false
 	endTime := time.Now().Add(time.Duration(timeout) * time.Second)
@@ -324,8 +336,16 @@ func (frp *FRP) waitUntilReady(timeout int) error {
 						if len(host) == 0 {
 							host = runningService.GetClientCommonConf().ServerAddr
 						}
-						frp.Port = port
-						frp.Host = host
+
+						if frp.Port != port || frp.Host != host {
+							if frp.Host != "" {
+								syslog.Printf("port changed to: %s:%d", host, port)
+							}
+							frp.Port = port
+							frp.Host = host
+
+						}
+
 						ready = true
 					}
 				}
