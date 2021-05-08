@@ -199,6 +199,7 @@ func RunAsync() error {
 		}
 		return false
 	})
+
 	go func() {
 		err := ssh.ListenAndServe(config.GetConfig().GetString("server.listen"), nil, passwordAuthOption)
 		if err != nil {
