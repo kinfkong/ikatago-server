@@ -76,7 +76,7 @@ do
 done
 
 echo "Downloading weights..."
-update_file ./resources/gomoku-weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-weights.zip b8a00e134b7ed1782349ae476763b803
+update_file ./resources/gomoku-weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-weights.zip
 if [ $? -ne 0 ]
 then
     echo "Failed to download the weights."
