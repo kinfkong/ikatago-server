@@ -343,9 +343,7 @@ func (frp *FRP) waitUntilReady(timeout int) error {
 							}
 							frp.Port = port
 							frp.Host = host
-
 						}
-
 						ready = true
 					}
 				}

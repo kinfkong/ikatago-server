@@ -1,4 +1,6 @@
 #!/bin/bash
+DATA_DOWNLOAD_URL="https://ikatago-resources.oss-cn-beijing.aliyuncs.com/gomoku-all"
+
 OS_NAME=$(cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME="\(.*\)"/\1/g' | tr '[:upper:]' '[:lower:]')
 
 GPU_NAME=$(nvidia-smi -q | grep "Product Name" | head -n 1 | cut -d":" -f2 | xargs)
@@ -67,7 +69,7 @@ mkdir -p ./resources
 echo "Downloading engines..."
 for KATAGO_VERSION in $KATAGO_VERSIONS
 do
-    update_file ./resources/gomoku-$KATAGO_VERSION-$PACKAGE.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-$KATAGO_VERSION-$PACKAGE.zip
+    update_file ./resources/gomoku-$KATAGO_VERSION-$PACKAGE.zip $DATA_DOWNLOAD_URL/gomoku-$KATAGO_VERSION-$PACKAGE.zip
     if [ $? -ne 0 ]
     then
         echo "Failed to download the engines."
@@ -76,7 +78,7 @@ do
 done
 
 echo "Downloading weights..."
-update_file ./resources/gomoku-weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-weights.zip
+update_file ./resources/gomoku-weights.zip $DATA_DOWNLOAD_URL/gomoku-weights.zip
 if [ $? -ne 0 ]
 then
     echo "Failed to download the weights."
@@ -84,7 +86,7 @@ then
 fi
 
 echo "Downloading work..."
-update_file ./resources/gomoku-work.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-work.zip 1c0a247017ad74a461d78fd56c8fe2c8
+update_file ./resources/gomoku-work.zip $DATA_DOWNLOAD_URL/gomoku-work.zip bfa70493a2e31f622bb3ae866799e259
 if [ $? -ne 0 ]
 then
     echo "Failed to download the work."
@@ -113,7 +115,7 @@ mv ./resources/gomoku-weights ./work/data/weights
 mkdir -p ./work/data/configs
 rm -rf ./work/data/configs/default_gtp.cfg
 mv ./work/default.cfg ./work/data/configs/default_gtp.cfg
-SEARCH_THREAD_NUM=$(($GPU_NUM * 25))
+SEARCH_THREAD_NUM=$(($GPU_NUM * 48))
 echo "Using Thread Num: $SEARCH_THREAD_NUM"
 
 CMD="s/numSearchThreads = .*/numSearchThreads = $SEARCH_THREAD_NUM/g"

@@ -1,4 +1,6 @@
 #!/bin/bash
+DATA_DOWNLOAD_URL="https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all"
+
 OS_NAME=$(cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME="\(.*\)"/\1/g')
 
 GPU_NAME=$(nvidia-smi -q | grep "Product Name" | head -n 1 | cut -d":" -f2 | xargs)
@@ -23,7 +25,7 @@ else
     CUDA_VERSION=$(nvidia-smi -q | grep "CUDA Version" | sed "s/^CUDA Version.*:[^0-9]*\(.*\)\.\(.*\)\.*$/\1.\2/g")
 fi
 ENV_NAME=$OS_NAME-cuda-$CUDA_VERSION
-KATAGO_VERSIONS="1.8.1"
+KATAGO_VERSIONS="1.8.2"
 GPU_NUM=$(($(nvidia-smi -q | grep "Attached GPUs" | cut -d':' -f2)))
 echo "System Env: " $ENV_NAME
 echo "GPU Info: " $GPU_NAME x $GPU_NUM
@@ -38,6 +40,7 @@ update_file() {
     FILE_URL=$2
     TARGET_MD5=$3
     SHOULD_UPDATE=0
+    #echo $2
     if [ ! -f $FILE_PATH ]
     then
         SHOULD_UPDATE=1
@@ -67,7 +70,7 @@ mkdir -p ./resources
 echo "Downloading engines..."
 for KATAGO_VERSION in $KATAGO_VERSIONS
 do
-    update_file ./resources/katago-$KATAGO_VERSION-$PACKAGE.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/katago-$KATAGO_VERSION-$PACKAGE.zip
+    update_file ./resources/katago-$KATAGO_VERSION-$PACKAGE.zip $DATA_DOWNLOAD_URL/katago-$KATAGO_VERSION-$PACKAGE.zip
     if [ $? -ne 0 ]
     then
         echo "Failed to download the engines."
@@ -76,21 +79,21 @@ do
 done
 
 echo "Downloading weights..."
-update_file ./resources/weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/weights.zip 8e633a8706d3a40781863720035102c9
+update_file ./resources/weights.zip $DATA_DOWNLOAD_URL/weights.zip 0b2651f8a0f0cd0a8e126f15f55a73ce
 if [ $? -ne 0 ]
 then
     echo "Failed to download the weights."
     exit -1
 fi
 echo "Downloading configs..."
-update_file ./resources/configs.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/configs.zip 43cc69565e7cdf768047c70d0c1ee0f4
+update_file ./resources/configs.zip $DATA_DOWNLOAD_URL/configs.zip 43cc69565e7cdf768047c70d0c1ee0f4
 if [ $? -ne 0 ]
 then
     echo "Failed to download the configs."
     exit -1
 fi
 echo "Downloading work..."
-update_file ./resources/linux-work.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/linux-work.zip bd0e3408ada19e666ef916daafd6dc5f
+update_file ./resources/linux-work.zip $DATA_DOWNLOAD_URL/linux-work.zip 434d57d48ea263a3d29faebb35833008
 if [ $? -ne 0 ]
 then
     echo "Failed to download the work."

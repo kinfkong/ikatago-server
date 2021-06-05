@@ -3,9 +3,9 @@ server:
   
 katago:
   bins:
-    - name: katago-1.8.1
-      path: ./data/bins/katago-1.8.1/run-katago.sh
-      description: v1.8.1版本的katago
+    - name: katago-1.8.2
+      path: ./data/bins/katago-1.8.2/run-katago.sh
+      description: v1.8.2版本的katago
   weights:
     - name: 20b
       path: ./data/weights/20b.bin.gz
@@ -17,7 +17,7 @@ katago:
       optional: true
     - name: 40b
       path: ./data/weights/40b.bin.gz
-      description: 40b权重, 40b256-571, 比官方强的权重
+      description: 40b权重
     - name: 40b-large
       path: ./data/weights/40b-large.bin.gz
       description: 胖权
@@ -53,7 +53,7 @@ katago:
       path: ./data/configs/7+stones_handicap.cfg
       description: 让子棋让7子及以上的配置
 
-  defaultBinName: katago-1.8.1
+  defaultBinName: katago-1.8.2
   defaultWeightName: 40b
   defaultConfigName: default_gtp 
   customConfigDir: ./user-data
