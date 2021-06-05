@@ -10,3 +10,4 @@
 /archive/*.zip
 /test
 /secret-bin
+.DS_Store
