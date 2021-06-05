@@ -1,11 +1,23 @@
 package cluster
 
-import "sync"
+import (
+	b64 "encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log"
+	"sync"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
+)
 
 // Service type
 type Service struct {
-	Server    string  `json:"server"`
-	MachineID *string `json:"machineId"`
+	ClusterMode bool   `json:"clusterMode"`
+	ClusterName string `json:"clusterName"`
+	MachineID   string `json:"machineId"`
+	ServerURL   string `json:"serverUrl"`
 }
 
 var serviceInstance *Service
@@ -24,4 +36,54 @@ func GetService() *Service {
 
 func Init(clusterToken string) error {
 	return nil
+}
+
+func (service *Service) Report(endpoint string, reportType string, data interface{}) error {
+	if !service.ClusterMode {
+		return nil
+	}
+	return nil
+}
+
+func (service *Service) ValidateToken(pubKey string, tokenString string) (jwt.MapClaims, error) {
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		pem, err := b64.StdEncoding.DecodeString(pubKey)
+		if err != nil {
+			return nil, err
+		}
+		return jwt.ParseRSAPublicKeyFromPEM(pem)
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !token.Valid {
+		log.Printf("ERROR: invalid token:" + tokenString)
+		return nil, errors.New("invalid_token")
+	}
+	if sub, ok := claims["sub"].(string); !ok || len(sub) == 0 {
+		return nil, errors.New("invalid_token")
+	}
+	var expV int64 = 0
+	switch exp := claims["exp"].(type) {
+	case float64:
+		expV = int64(exp)
+	case json.Number:
+		expV, _ = exp.Int64()
+	}
+	log.Printf("Machine Token will expires at: %v\n", time.Unix(expV, 0))
+	expireDate := time.Unix(expV, 0)
+	go func() {
+		for {
+			now := time.Now()
+			if now.After(expireDate) {
+				log.Fatal("Token expired")
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
+	return claims, err
 }

@@ -32,4 +32,4 @@ report:
   url: http://localhost:4200/api/ikatago/report-log/batch
 
 cluster:
-  server: http://localhost:4200
+  serverUrl: http://localhost:4200

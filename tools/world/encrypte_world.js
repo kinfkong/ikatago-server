@@ -56,7 +56,7 @@ for (const platform of world.platforms) {
         dataEncryptKeyPrefix: platform.token.dataEncryptKeyPrefix 
     }, privateKey, signStuff)
     if (platform.oss && platform.oss.data) {
-        platform.oss.encryptedData = encrypt(platform.token.dataEncryptKeyPrefix + '#new-ikatago', JSON.stringify(platform.oss.data))
+        platform.oss.encryptedData = encrypt(platform.token.dataEncryptKeyPrefix + 'kjdks2ikdjskfjdks', JSON.stringify(platform.oss.data))
         delete platform.oss.data
     }
     tokens.push({

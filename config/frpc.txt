@@ -1,11 +1,11 @@
 [common]
-#server_addr = {{ .Envs.KNAT_SERVER_ADDR }}
-#server_port = {{ .Envs.KNAT_SERVER_PORT }}
-#token = {{ .Envs.KNAT_SERVER_TOKEN }}
+server_addr = {{ .Envs.KNAT_SERVER_ADDR }}
+server_port = {{ .Envs.KNAT_SERVER_PORT }}
+token = {{ .Envs.KNAT_SERVER_TOKEN }}
 
-server_addr = localhost
-server_port = 7001
-token = kinfkong
+#server_addr = localhost
+#server_port = 7001
+#token = kinfkong
 
 [kinfkong-ssh-kktest]
 type = tcp
