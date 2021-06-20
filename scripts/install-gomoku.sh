@@ -1,5 +1,5 @@
 #!/bin/bash
-DATA_DOWNLOAD_URL="https://ikatago-resources.oss-cn-beijing.aliyuncs.com/gomoku-all"
+DATA_DOWNLOAD_URL="http://8.130.167.86:8080/api/ikatago/resources/download/gomoku-all"
 
 OS_NAME=$(cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME="\(.*\)"/\1/g' | tr '[:upper:]' '[:lower:]')
 

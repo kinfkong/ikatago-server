@@ -85,5 +85,6 @@ func (oss *Oss) SaveUserSSHInfo(userSSHInfo model.SSHLoginInfo) error {
 	if err != nil {
 		return err
 	}
+	log.Printf("done: %s", userSSHInfo.User)
 	return nil
 }
