@@ -16,6 +16,9 @@ then
 elif [[ "$GPU_NAME" == *"A100"* ]]
 then
     GPU_NAME="A100"
+elif [[ "$GPU_NAME" == *"A6000"* ]]
+then
+    GPU_NAME="A6000"
 fi
 
 if [ -f /usr/local/cuda/version.txt  ]
@@ -86,7 +89,7 @@ then
     exit -1
 fi
 echo "Downloading configs..."
-update_file ./resources/configs.zip $DATA_DOWNLOAD_URL/configs.zip 43cc69565e7cdf768047c70d0c1ee0f4
+update_file ./resources/configs.zip $DATA_DOWNLOAD_URL/configs.zip 6ed00e9ed13cc2c15890ce2116b97759
 if [ $? -ne 0 ]
 then
     echo "Failed to download the configs."
