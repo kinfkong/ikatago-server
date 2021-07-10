@@ -28,11 +28,16 @@ else
     CUDA_VERSION=$(nvidia-smi -q | grep "CUDA Version" | sed "s/^CUDA Version.*:[^0-9]*\(.*\)\.\(.*\)\.*$/\1.\2/g")
 fi
 ENV_NAME=$OS_NAME-cuda-$CUDA_VERSION
-KATAGO_VERSIONS="1.8.2"
+KATAGO_VERSIONS="1.8.2 1.9.1"
 GPU_NUM=$(($(nvidia-smi -q | grep "Attached GPUs" | cut -d':' -f2)))
 echo "System Env: " $ENV_NAME
 echo "GPU Info: " $GPU_NAME x $GPU_NUM
 PACKAGE=ubuntu-cuda-$CUDA_VERSION
+if [[ "$PACKAGE" == "ubuntu-cuda-11"* ]]
+then
+    # use cuda 11.1 instead
+    PACKAGE=ubuntu-cuda-11.1
+fi
 #if [ "$1" != "" ]
 #then
 #    PACKAGE=$1
@@ -82,21 +87,21 @@ do
 done
 
 echo "Downloading weights..."
-update_file ./resources/weights.zip $DATA_DOWNLOAD_URL/weights.zip 0b2651f8a0f0cd0a8e126f15f55a73ce
+update_file ./resources/weights.zip $DATA_DOWNLOAD_URL/weights.zip d0bad5372d51f4963efac2b0f55ac5ed
 if [ $? -ne 0 ]
 then
     echo "Failed to download the weights."
     exit -1
 fi
 echo "Downloading configs..."
-update_file ./resources/configs.zip $DATA_DOWNLOAD_URL/configs.zip 6ed00e9ed13cc2c15890ce2116b97759
+update_file ./resources/configs.zip $DATA_DOWNLOAD_URL/configs.zip 68f1ea2261598609cfd9cfec270c8755
 if [ $? -ne 0 ]
 then
     echo "Failed to download the configs."
     exit -1
 fi
 echo "Downloading work..."
-update_file ./resources/linux-work.zip $DATA_DOWNLOAD_URL/linux-work.zip 434d57d48ea263a3d29faebb35833008
+update_file ./resources/linux-work.zip $DATA_DOWNLOAD_URL/linux-work.zip 73bbd8786edab47bfefbc27c37887a07
 if [ $? -ne 0 ]
 then
     echo "Failed to download the work."

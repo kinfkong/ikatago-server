@@ -6,6 +6,9 @@ katago:
     - name: katago-1.8.2
       path: ./data/bins/katago-1.8.2/run-katago.sh
       description: v1.8.2版本的katago
+    - name: katago-1.9.1
+      path: ./data/bins/katago-1.9.1/run-katago.sh
+      description: v1.9.1版本的katago
   weights:
     - name: 20b
       path: ./data/weights/20b.bin.gz
@@ -53,7 +56,7 @@ katago:
       path: ./data/configs/7+stones_handicap.cfg
       description: 让子棋让7子及以上的配置
 
-  defaultBinName: katago-1.8.2
+  defaultBinName: katago-1.9.1
   defaultWeightName: 40b
   defaultConfigName: default_gtp 
   customConfigDir: ./user-data
