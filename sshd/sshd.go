@@ -5,18 +5,14 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/gliderlabs/ssh"
-	"github.com/google/uuid"
 	"github.com/kinfkong/ikatago-server/config"
-	"github.com/kinfkong/ikatago-server/report"
+	"github.com/kinfkong/ikatago-server/utils"
 )
 
 // UserInfo represents the user info
@@ -106,89 +102,12 @@ func RunAsync() error {
 			log.Printf("INFO user [%s] session done\n", s.User())
 			return
 		}
-		sessionID := uuid.New().String()
-		startedAt := time.Now()
-		report.GetService().AddToQueue(report.ReportLog{
-			SessionID:       sessionID,
-			Platform:        report.GetService().PlatformName,
-			ConnectUsername: s.User(),
-			EventType:       "SESSION_START",
-			EventStartedAt:  startedAt,
-			EventEndedAt:    startedAt,
-			Duration:        0,
-		})
-		ended := make(chan bool)
-		// monitor
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			shouldEnd := false
-			for {
-				select {
-				case <-ended:
-					shouldEnd = true
-				default:
-					// Do other stuff
-				}
-
-				if !shouldEnd {
-					time.Sleep(5 * time.Second)
-				}
-
-				now := time.Now()
-				duration := now.Sub(startedAt).Seconds()
-				report.GetService().AddToQueue(report.ReportLog{
-					SessionID:       sessionID,
-					Platform:        report.GetService().PlatformName,
-					ConnectUsername: s.User(),
-					EventType:       "SESSION_ONGOING",
-					EventStartedAt:  startedAt,
-					EventEndedAt:    now,
-					Duration:        int(math.Ceil(duration)),
-				})
-				if shouldEnd {
-					return
-				}
-			}
-		}()
-		if err := cmd.Run(); err != nil {
-			log.Printf("INFO user [%s] session done\n", s.User())
+		username := s.User()
+		err = utils.GetCmdManager().RunCommand(&username, cmd)
+		if err != nil {
 			log.Println(err)
-			ended <- true
-			wg.Wait()
-
-			now := time.Now()
-			duration := now.Sub(startedAt).Seconds()
-			report.GetService().AddToQueue(report.ReportLog{
-				SessionID:       sessionID,
-				Platform:        report.GetService().PlatformName,
-				ConnectUsername: s.User(),
-				EventType:       "SESSION_END",
-				EventStartedAt:  startedAt,
-				EventEndedAt:    now,
-				Duration:        int(math.Ceil(duration)),
-			})
-
-			return
 		}
-		log.Printf("INFO user [%s] session done\n", s.User())
-		ended <- true
-		wg.Wait()
-
-		now := time.Now()
-		duration := now.Sub(startedAt).Seconds()
-		report.GetService().AddToQueue(report.ReportLog{
-			SessionID:       sessionID,
-			Platform:        report.GetService().PlatformName,
-			ConnectUsername: s.User(),
-			EventType:       "SESSION_END",
-			EventStartedAt:  startedAt,
-			EventEndedAt:    now,
-			Duration:        int(math.Ceil(duration)),
-		})
-
+		log.Printf("INFO user [%s] session done\n", username)
 	})
 
 	passwordAuthOption := ssh.PasswordAuth(func(ctx ssh.Context, password string) bool {

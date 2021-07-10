@@ -60,6 +60,7 @@ func (cmdManager *CmdManager) RunCommand(username *string, cmd *exec.Cmd) error 
 	cmdID := uuid.NewV4().String()
 	cmdManager.addCmd(&ExtendedCmd{
 		ID:        cmdID,
+		Username:  username,
 		Cmd:       cmd,
 		StartedAt: &now,
 	})
@@ -71,7 +72,7 @@ func (cmdManager *CmdManager) RunCommand(username *string, cmd *exec.Cmd) error 
 
 func (cmdManager *CmdManager) KillCommand(cmdID string) error {
 	for _, cmd := range cmdManager.cmds {
-		if cmd.ID == cmdID {
+		if cmd.ID == cmdID && cmd.Cmd.Process != nil {
 			return cmd.Cmd.Process.Kill()
 		}
 	}
