@@ -21,7 +21,6 @@ type GTPWriter struct {
 	writer               io.Writer
 	buffer               *bytes.Buffer
 	latestInfoWriteAt    *time.Time
-	firstWrite           bool
 }
 
 type infoData struct {
@@ -47,7 +46,7 @@ func (writer *GTPWriter) Write(buf []byte) {
 	}
 	//log.Printf("DEBUG got new buffer[%v]\n", string(buf))
 	// split the whole buffer by lines
-	content := string(writer.buffer.Bytes())
+	content := writer.buffer.String()
 	// log.Printf("DEBUG content[%v]\n", content)
 	lines := strings.Split(content, "\n")
 	if len(lines) == 0 {

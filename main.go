@@ -28,7 +28,6 @@ var opts struct {
 	World         *string `short:"w" long:"world" description:"The world url."`
 	Platform      string  `short:"p" long:"platform" description:"The platform, like aistudio, colab" required:"true"`
 	PlatformToken string  `short:"t" long:"token" description:"The token of the platform, like aistudio, colab" required:"true"`
-	MachineToken  *string `short:"m" long:"machine-token" description:"The token of machine in the cluster, it is optional."`
 	ConfigFile    *string `short:"c" long:"config" description:"The config file of the server (not katago config file)" default:"./config/conf.yaml"`
 }
 
@@ -160,9 +159,6 @@ func parseArgs() {
 	config.GetConfig().Set("platform.token", opts.PlatformToken)
 	log.Printf("DEBUG the world is: %s\n", config.GetConfig().GetString("world.url"))
 	log.Printf("DEBUG Platform: [%s]\n", config.GetConfig().GetString("platform.name"))
-	if opts.MachineToken != nil {
-		config.GetConfig().Set("machine.token", opts.MachineToken)
-	}
 }
 
 func main() {
@@ -219,10 +215,6 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
-
-	if len(config.GetConfig().GetString("machine.token")) > 0 {
-
 	}
 
 	fmt.Printf("\n\n")

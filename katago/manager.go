@@ -2,7 +2,6 @@ package katago
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -191,62 +190,6 @@ func (m *Manager) runByCmd(cmd string, subcommands []string) (*exec.Cmd, error) 
 	return exec.Command(cmd, subcommands...), nil
 }
 
-func (m *Manager) runByAiStudioRunner(binName string, binPath string, subcommands []string) (*exec.Cmd, error) {
-	decryptePassword := "abcde12345"
-	decrypteCommandTemplate := "openssl enc -in %s -d -aes-256-cbc -pass pass:%s -md sha512 -pbkdf2 -iter 1000 > %s"
-
-	inputRootPath := binPath
-	outputRootPath := "/tmp/" + binName
-	output, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("rm -rf %s && mkdir -p %s", outputRootPath, outputRootPath)).CombinedOutput()
-	if err != nil {
-		return nil, err
-	}
-	katagoInputName := fmt.Sprintf("%s/k", inputRootPath)
-	katagoOutputName := fmt.Sprintf("%s/k", outputRootPath)
-	libzipInputName := fmt.Sprintf("%s/lz", inputRootPath)
-	libzipOutputName := fmt.Sprintf("%s/lz", outputRootPath)
-	libstdcInputName := fmt.Sprintf("%s/lc", inputRootPath)
-	libstdcOutputName := fmt.Sprintf("%s/lc", outputRootPath)
-
-	libzipRealName := fmt.Sprintf("%s/libzip.so.4", outputRootPath)
-	libstdcRealName := fmt.Sprintf("%s/libstdc++.so.6", outputRootPath)
-
-	output, err = exec.Command("/bin/sh", "-c", fmt.Sprintf(decrypteCommandTemplate, katagoInputName, decryptePassword, katagoOutputName)).CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-	output, err = exec.Command("/bin/sh", "-c", fmt.Sprintf(decrypteCommandTemplate, libzipInputName, decryptePassword, libzipOutputName)).CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-	output, err = exec.Command("/bin/sh", "-c", fmt.Sprintf(decrypteCommandTemplate, libstdcInputName, decryptePassword, libstdcOutputName)).CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-
-	output, err = exec.Command("/bin/sh", "-c", fmt.Sprintf("chmod +x %s", katagoOutputName)).CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-	output, err = exec.Command("/bin/sh", "-c", fmt.Sprintf("rm -f %s && ln -s %s %s", libstdcRealName, libstdcOutputName, libstdcRealName)).CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-
-	output, err = exec.Command("/bin/sh", "-c", fmt.Sprintf("rm -f %s && ln -s %s %s", libzipRealName, libzipOutputName, libzipRealName)).CombinedOutput()
-	if err != nil {
-		log.Printf("DEBUG error output: %s\n", string(output))
-		return nil, err
-	}
-
-	return exec.Command("/bin/sh", "-c", fmt.Sprintf("export LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH; %s %s", outputRootPath, katagoOutputName, strings.Join(subcommands, " "))), nil
-}
-
 // Run runs the katago
 func (m *Manager) Run(binName string, subcommands []string) (*exec.Cmd, error) {
 
@@ -269,10 +212,7 @@ func (m *Manager) Run(binName string, subcommands []string) (*exec.Cmd, error) {
 		return m.runDirectly(binConfig.Path, subcommands)
 	}
 	// run by runner
-	if *binConfig.Runner == "aistudio-runner" {
-		// special for aistudio
-		return m.runByAiStudioRunner(binName, binConfig.Path, subcommands)
-	} else if *binConfig.Runner == "cmd" {
+	if *binConfig.Runner == "cmd" {
 		return m.runByCmd(binConfig.Path, subcommands)
 	} else {
 		return nil, errors.New("not_support_runner")
