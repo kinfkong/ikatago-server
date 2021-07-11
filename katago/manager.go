@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/kinfkong/ikatago-server/config"
 	"github.com/kinfkong/ikatago-server/utils"
@@ -54,6 +55,7 @@ type Manager struct {
 
 var managerInstance *Manager
 var managerMu sync.Mutex
+var weightsDetectionLock sync.Mutex
 
 // GetManager returns the singleton instance of the Service
 func GetManager() *Manager {
@@ -113,37 +115,18 @@ func NewManager(configObject *viper.Viper) *Manager {
 			}
 		}
 	}
-	if manager.EnableWeightsDetectionInDir != nil {
-		files, err := walkMatch(*manager.EnableWeightsDetectionInDir, "*.bin.gz")
-		if err == nil {
-			detectedFiles := make([]string, 0)
-			for _, file := range files {
-				ignored := false
-				for _, weight := range manager.Weights {
-					a1, _ := filepath.Abs(weight.Path)
-					a2, _ := filepath.Abs(file)
-					if a1 == a2 {
-						ignored = true
-						break
-					}
-				}
-				if !ignored {
-					detectedFiles = append(detectedFiles, file)
-				}
-			}
-			for _, detectedFile := range detectedFiles {
-				basename := filepath.Base(detectedFile)
-				name := strings.TrimSuffix(basename, ".bin.gz")
-				log.Printf("Detected new weight %s with name [%s]", detectedFile, name)
-				manager.Weights = append(manager.Weights, WeightConfig{
-					Path:     detectedFile,
-					Optional: true,
-					Name:     name,
-				})
-			}
-		}
 
+	if manager.EnableWeightsDetectionInDir != nil {
+		manager.addAutoDetectedWeights(*manager.EnableWeightsDetectionInDir)
+		// run detection forever
+		go func() {
+			for {
+				manager.addAutoDetectedWeights(*manager.EnableWeightsDetectionInDir)
+				time.Sleep(10 * time.Second)
+			}
+		}()
 	}
+
 	for _, weight := range manager.Weights {
 		if !utils.FileExists(weight.Path) && !weight.Optional {
 			log.Printf("ERROR the path %s does not exist or not a file\n", weight.Path)
@@ -178,6 +161,39 @@ func NewManager(configObject *viper.Viper) *Manager {
 		manager.DefaultConfigName = manager.Configs[0].Name
 	}
 	return &manager
+}
+
+func (m *Manager) addAutoDetectedWeights(dir string) {
+	weightsDetectionLock.Lock()
+	defer weightsDetectionLock.Unlock()
+	files, err := walkMatch(dir, "*.bin.gz")
+	if err == nil {
+		detectedFiles := make([]string, 0)
+		for _, file := range files {
+			ignored := false
+			for _, weight := range m.Weights {
+				a1, _ := filepath.Abs(weight.Path)
+				a2, _ := filepath.Abs(file)
+				if a1 == a2 {
+					ignored = true
+					break
+				}
+			}
+			if !ignored {
+				detectedFiles = append(detectedFiles, file)
+			}
+		}
+		for _, detectedFile := range detectedFiles {
+			basename := filepath.Base(detectedFile)
+			name := strings.TrimSuffix(basename, ".bin.gz")
+			log.Printf("Detected new weight %s with name [%s]", detectedFile, name)
+			m.Weights = append(m.Weights, WeightConfig{
+				Path:     detectedFile,
+				Optional: true,
+				Name:     name,
+			})
+		}
+	}
 }
 
 func (m *Manager) runDirectly(binPath string, subcommands []string) (*exec.Cmd, error) {
