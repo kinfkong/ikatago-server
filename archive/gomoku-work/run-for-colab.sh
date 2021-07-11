@@ -17,8 +17,6 @@ PLATFORM_TOKEN="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhRW5jcnlwdEtleVByZWZ
 
 
 echo $USER_NAME":"$USER_PASSWORD > ./userlist.txt
-chmod +x ./change-frpc.sh 
-./change-frpc.sh $USER_NAME
 chmod +x ./ikatago-server
 ./ikatago-server --platform colab --token $PLATFORM_TOKEN
 

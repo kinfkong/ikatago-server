@@ -6,6 +6,9 @@ katago:
     - name: mock-katago # name it any name
       path: ./data/bins/run-mock-katago.sh # the katago bin file location
       description: The mock katago
+    - name: test # name it any name
+      path: ./data/bins/test.sh
+      description: for any command test
   weights:
     - name: 20b
       path: ./data/weights/model.bin.gz
