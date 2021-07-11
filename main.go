@@ -14,6 +14,7 @@ import (
 	"github.com/jessevdk/go-flags"
 
 	"github.com/kinfkong/ikatago-server/config"
+	"github.com/kinfkong/ikatago-server/event"
 	"github.com/kinfkong/ikatago-server/katago"
 	"github.com/kinfkong/ikatago-server/model"
 	"github.com/kinfkong/ikatago-server/nat"
@@ -216,6 +217,19 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	// re-save it when frp host port changed
+	event.GetService().Subscribe(event.EventFRPPortChanged, func(host string, port int) {
+		for _, sshUser := range sshd.Users {
+			err := oss.SaveUserSSHInfo(model.SSHLoginInfo{
+				Host: host,
+				Port: port,
+				User: sshUser.Username,
+			})
+			if err != nil {
+				log.Printf("ERROR failed to save user info to oss: %+v", err)
+			}
+		}
+	})
 
 	fmt.Printf("\n\n")
 	fmt.Printf("SSH HOST: %s\n", sshInfo.Host)

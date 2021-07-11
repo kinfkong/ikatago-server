@@ -5,11 +5,24 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
 	"moul.io/http2curl"
 )
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+func RandStringRunes(n int) string {
+	rand.Seed(time.Now().UnixNano())
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
 
 // DoHTTPRequest Sends generic http request
 func DoHTTPRequest(method string, url string, headers map[string]string, body []byte) (responseBody string, err error) {

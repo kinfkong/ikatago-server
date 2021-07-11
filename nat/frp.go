@@ -22,6 +22,8 @@ import (
 	"github.com/fatedier/frp/utils/version"
 	"github.com/fatedier/golib/crypto"
 	myconfig "github.com/kinfkong/ikatago-server/config"
+	"github.com/kinfkong/ikatago-server/event"
+	myutils "github.com/kinfkong/ikatago-server/utils"
 	"github.com/spf13/cobra"
 
 	// import the blank assets
@@ -72,6 +74,7 @@ var (
 
 // do some stuff
 var _ = func() error {
+	os.Setenv("KNAT_AUTOGEN_TUNNEL_NAME", myutils.RandStringRunes(16))
 	os.Setenv("KNAT_SERVER_ADDR", "120.53.123.43")
 	os.Setenv("KNAT_SERVER_PORT", "7001")
 	os.Setenv("KNAT_SERVER_TOKEN", "kinfkong")
@@ -338,11 +341,17 @@ func (frp *FRP) waitUntilReady(timeout int) error {
 						}
 
 						if frp.Port != port || frp.Host != host {
+							changed := false
 							if frp.Host != "" {
-								syslog.Printf("port changed to: %s:%d", host, port)
+								changed = true
 							}
+
 							frp.Port = port
 							frp.Host = host
+							if changed {
+								syslog.Printf("port changed to: %s:%d", host, port)
+								event.GetService().Publish(event.EventFRPPortChanged, host, port)
+							}
 						}
 						ready = true
 					}

@@ -7,7 +7,7 @@ token = {{ .Envs.KNAT_SERVER_TOKEN }}
 #server_port = 7001
 #token = kinfkong
 
-[kinfkong-ssh-kktest]
+[ssh-tunnel-{{ .Envs.KNAT_AUTOGEN_TUNNEL_NAME }}]
 type = tcp
 local_ip = 127.0.0.1
 local_port = 2223
