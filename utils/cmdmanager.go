@@ -3,10 +3,7 @@ package utils
 import (
 	"errors"
 	"os/exec"
-	"runtime"
-	"strconv"
 	"sync"
-	"syscall"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -58,7 +55,8 @@ func (cmdManager *CmdManager) RunCommand(username *string, cmd *exec.Cmd) error 
 	if cmd == nil {
 		return errors.New("cmd cannot be nil")
 	}
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	// for linux/darwin only
+	SetSysAttr(cmd)
 
 	now := time.Now()
 	// add to the current commands
@@ -78,19 +76,9 @@ func (cmdManager *CmdManager) RunCommand(username *string, cmd *exec.Cmd) error 
 func (cmdManager *CmdManager) KillCommand(cmdID string) error {
 	for _, cmd := range cmdManager.cmds {
 		if cmd.ID == cmdID && cmd.Cmd.Process != nil {
-			os := runtime.GOOS
-			switch os {
-			case "windows":
-				killCmd := exec.Command("taskkill", "/T", "/F", "/PID", strconv.Itoa(cmd.Cmd.Process.Pid))
-				err := killCmd.Run()
-				if err != nil {
-					return err
-				}
-			default:
-				err := syscall.Kill(-cmd.Cmd.Process.Pid, syscall.SIGKILL)
-				if err != nil {
-					return err
-				}
+			err := KillProcess(cmd.Cmd.Process.Pid)
+			if err != nil {
+				return err
 			}
 			break
 		}
