@@ -53,7 +53,7 @@ func (service *Service) StartDaemonReport() {
 			if err == nil {
 				natInfo, err := natProvider.GetInfo()
 				if err == nil {
-					extraInfo["frp"] = map[string]interface{}{
+					extraInfo["nat"] = map[string]interface{}{
 						"host": natInfo.Host,
 						"port": natInfo.Port,
 					}
