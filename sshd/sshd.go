@@ -103,7 +103,7 @@ func RunAsync() error {
 			return
 		}
 		username := s.User()
-		err = utils.GetCmdManager().RunCommand(&username, cmd)
+		err = utils.GetCmdManager().RunCommand(&username, "katago", cmd)
 		if err != nil {
 			log.Println(err)
 		}

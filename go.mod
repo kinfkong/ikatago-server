@@ -14,6 +14,7 @@ require (
 	github.com/huandu/go-tls v1.0.1 // indirect
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/mergermarket/go-pkcs7 v0.0.0-20170926155232-153b18ea13c9
+	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/rakyll/statik v0.1.1
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/spf13/cobra v0.0.3

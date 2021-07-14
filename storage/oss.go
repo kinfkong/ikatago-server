@@ -81,10 +81,10 @@ func (oss *Oss) SaveUserSSHInfo(userSSHInfo model.SSHLoginInfo) error {
 	if err != nil {
 		return err
 	}
-	err = bucket.SetObjectACL(fileKey, aliynOss.ACLPublicRead)
+	/*err = bucket.SetObjectACL(fileKey, aliynOss.ACLPublicRead)
 	if err != nil {
 		return err
-	}
-	log.Printf("done: %s", userSSHInfo.User)
+	}*/
+
 	return nil
 }

@@ -14,7 +14,9 @@ var cmdManagerMu sync.Mutex
 
 type ExtendedCmd struct {
 	// ID is the id of the command, assigned internally
-	ID string
+	ID          string
+	CommandType string `json:"commandType"`
+
 	// Cmd the command it self
 	Cmd *exec.Cmd
 	// Username the ikatago user that runs this command
@@ -23,14 +25,15 @@ type ExtendedCmd struct {
 }
 
 type CommandInfo struct {
-	ID        string     `json:"id"`
-	Username  *string    `json:"username"`
-	StartedAt *time.Time `json:"startedAt"`
-	Path      string     `json:"path"`
-	Args      []string   `json:"args"`
-	Env       []string   `json:"env"`
-	Dir       string     `json:"dir"`
-	Pid       *int       `json:"pid"`
+	ID          string     `json:"id"`
+	CommandType string     `json:"commandType"`
+	Username    *string    `json:"username"`
+	StartedAt   *time.Time `json:"startedAt"`
+	Path        string     `json:"path"`
+	Args        []string   `json:"args"`
+	Env         []string   `json:"env"`
+	Dir         string     `json:"dir"`
+	Pid         *int       `json:"pid"`
 }
 
 type CmdManager struct {
@@ -51,21 +54,20 @@ func GetCmdManager() *CmdManager {
 }
 
 // RunCommand runs the command sync (will block until the cmd run done)
-func (cmdManager *CmdManager) RunCommand(username *string, cmd *exec.Cmd) error {
+func (cmdManager *CmdManager) RunCommand(username *string, commandType string, cmd *exec.Cmd) error {
 	if cmd == nil {
 		return errors.New("cmd cannot be nil")
 	}
-	// for linux/darwin only
-	SetSysAttr(cmd)
 
 	now := time.Now()
 	// add to the current commands
 	cmdID := uuid.NewV4().String()
 	cmdManager.addCmd(&ExtendedCmd{
-		ID:        cmdID,
-		Username:  username,
-		Cmd:       cmd,
-		StartedAt: &now,
+		ID:          cmdID,
+		CommandType: commandType,
+		Username:    username,
+		Cmd:         cmd,
+		StartedAt:   &now,
 	})
 	err := cmd.Run()
 	// remove it after the command done
@@ -76,7 +78,7 @@ func (cmdManager *CmdManager) RunCommand(username *string, cmd *exec.Cmd) error 
 func (cmdManager *CmdManager) KillCommand(cmdID string) error {
 	for _, cmd := range cmdManager.cmds {
 		if cmd.ID == cmdID && cmd.Cmd.Process != nil {
-			err := KillProcess(cmd.Cmd.Process.Pid)
+			err := KillProcessAndChildren(cmd.Cmd.Process.Pid)
 			if err != nil {
 				return err
 			}
@@ -97,14 +99,15 @@ func (cmdManager *CmdManager) GetAllCmdInfo() []CommandInfo {
 			pid = &cmd.Cmd.Process.Pid
 		}
 		infos = append(infos, CommandInfo{
-			ID:        cmd.ID,
-			Username:  cmd.Username,
-			StartedAt: cmd.StartedAt,
-			Path:      cmd.Cmd.Path,
-			Args:      cmd.Cmd.Args,
-			Env:       cmd.Cmd.Env,
-			Dir:       cmd.Cmd.Dir,
-			Pid:       pid,
+			ID:          cmd.ID,
+			CommandType: cmd.CommandType,
+			Username:    cmd.Username,
+			StartedAt:   cmd.StartedAt,
+			Path:        cmd.Cmd.Path,
+			Args:        cmd.Cmd.Args,
+			Env:         cmd.Cmd.Env,
+			Dir:         cmd.Cmd.Dir,
+			Pid:         pid,
 		})
 	}
 	return infos
