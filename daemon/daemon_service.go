@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kinfkong/ikatago-server/config"
+	"github.com/kinfkong/ikatago-server/nat"
 	"github.com/kinfkong/ikatago-server/utils"
 )
 
@@ -47,11 +48,23 @@ func (service *Service) StartDaemonReport() {
 	go func() {
 		for {
 			// run the gather infos
+			extraInfo := make(map[string]interface{})
+			natProvider, err := nat.GetNatProvider()
+			if err == nil {
+				natInfo, err := natProvider.GetInfo()
+				if err == nil {
+					extraInfo["frp"] = map[string]interface{}{
+						"host": natInfo.Host,
+						"port": natInfo.Port,
+					}
+				}
+			}
+
 			workerData := WorkerData{
 				WorkerType:      "ikatago-server",
 				Timestamp:       time.Now(),
 				RunningCommands: utils.GetCmdManager().GetAllCmdInfo(),
-				ExtraInfo:       make(map[string]interface{}),
+				ExtraInfo:       extraInfo,
 			}
 			service.AddToQueue(workerData)
 			time.Sleep(time.Second)
@@ -60,7 +73,7 @@ func (service *Service) StartDaemonReport() {
 	}()
 	failedCount := 0
 	for {
-		batchData := service.queue.WaitTimeoutOrMax(time.Duration(time.Second*5), 100)
+		batchData := service.queue.WaitTimeoutOrMax(time.Duration(time.Second), 100)
 		// log.Printf("fowarding: %d messages", len(batchData))
 		// do real sent
 		if len(batchData) > 0 {
