@@ -19,4 +19,5 @@ type ServerInfo struct {
 	DefaultKataName    string           `json:"defaultKataName"`
 	DefaultKataWeight  string           `json:"defaultKataWeight"`
 	DefaultKataConfig  string           `json:"defaultKataConfig"`
+	GPUs               []string         `json:"gpus"`
 }

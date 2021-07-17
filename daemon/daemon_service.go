@@ -11,6 +11,7 @@ import (
 	"github.com/kinfkong/ikatago-server/config"
 	"github.com/kinfkong/ikatago-server/nat"
 	"github.com/kinfkong/ikatago-server/utils"
+	uuid "github.com/satori/go.uuid"
 )
 
 // Service type
@@ -45,6 +46,7 @@ func (service *Service) IsDaemonAvailable() bool {
 
 func (service *Service) StartDaemonReport() {
 	log.Printf("Daemon report started")
+	workerID := uuid.NewV4().String()
 	go func() {
 		for {
 			// run the gather infos
@@ -59,10 +61,11 @@ func (service *Service) StartDaemonReport() {
 					}
 				}
 			}
-
 			workerData := WorkerData{
+				ID:              workerID,
 				WorkerType:      "ikatago-server",
 				Timestamp:       time.Now(),
+				GPUs:            utils.GetGPUInfo(),
 				RunningCommands: utils.GetCmdManager().GetAllCmdInfo(),
 				ExtraInfo:       extraInfo,
 			}

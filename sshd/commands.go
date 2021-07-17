@@ -244,6 +244,7 @@ func queryServer(session ssh.Session, args ...string) (*exec.Cmd, error) {
 		DefaultKataWeight:  katagoManager.DefaultWeightName,
 		DefaultKataConfig:  katagoManager.DefaultConfigName,
 		DefaultKataName:    katagoManager.DefaultBinName,
+		GPUs:               utils.GetGPUInfo(),
 	}
 	b, err := json.Marshal(serverInfo)
 	if err != nil {
