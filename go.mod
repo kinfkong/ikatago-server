@@ -13,6 +13,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/huandu/go-tls v1.0.1 // indirect
 	github.com/jaypipes/ghw v0.8.0 // indirect
+	github.com/jaypipes/pcidb v0.6.0 // indirect
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/mergermarket/go-pkcs7 v0.0.0-20170926155232-153b18ea13c9
 	github.com/mitchellh/go-ps v1.0.0 // indirect
