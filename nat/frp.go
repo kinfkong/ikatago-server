@@ -84,7 +84,6 @@ var _ = func() error {
 	if os.Getenv("KNAT_SERVER_TOKEN") == "" {
 		os.Setenv("KNAT_SERVER_TOKEN", "kinfkong")
 	}
-	os.Setenv("KNAT_SERVER_TOKEN", "kinfkong")
 	return nil
 }()
 
