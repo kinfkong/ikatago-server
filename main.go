@@ -158,7 +158,25 @@ func parseArgs() {
 
 	config.GetConfig().Set("platform.name", opts.Platform)
 	config.GetConfig().Set("platform.token", opts.PlatformToken)
+	if opts.DaemonPort == nil {
+		// try to read it from env
+		portStr := os.Getenv("IKATAGO_DAEMON_PORT")
+		if portStr != "" {
+			port, err := utils.GetJSONIntNumber(portStr)
+			if err == nil {
+				opts.DaemonPort = &port
+			}
+		}
+	}
 	config.GetConfig().Set("daemon.port", opts.DaemonPort)
+
+	if os.Getenv("IKATAGO_AUTH_PUBKEY") != "" {
+		// use public key auth
+		config.GetConfig().Set("auth.publicKey", os.Getenv("IKATAGO_AUTH_PUBKEY"))
+	}
+	if os.Getenv("IKATAGO_CLUSTER_MODE") == "1" {
+		config.GetConfig().Set("clusterModeEnabled", true)
+	}
 	log.Printf("DEBUG the world is: %s\n", config.GetConfig().GetString("world.url"))
 	log.Printf("DEBUG Platform: [%s]\n", config.GetConfig().GetString("platform.name"))
 }

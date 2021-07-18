@@ -36,6 +36,11 @@ func RegisterCommandHandler(commandName string, handler SSHCommandHandler) {
 }
 
 func readUsers(filename string) []UserInfo {
+	if config.GetConfig().GetBool("clusterModeEnabled") {
+		// ignore the local users for cluster mode
+		log.Println("LOCAL USER is ignore because it is in cluster mode")
+		return make([]UserInfo, 0)
+	}
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -118,9 +123,21 @@ func RunAsync() error {
 		}
 		return false
 	})
+	publicKeyAuthOption := ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
+		publicKeyInConfig := config.GetConfig().GetString("auth.publicKey")
+		if publicKeyInConfig == "" {
+			return false
+		}
+		pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(publicKeyInConfig))
+		if err != nil {
+			log.Printf("Failed to read key: %+v", err)
+			return false
+		}
+		return ssh.KeysEqual(pubKey, key)
 
+	})
 	go func() {
-		err := ssh.ListenAndServe(config.GetConfig().GetString("server.listen"), nil, passwordAuthOption)
+		err := ssh.ListenAndServe(config.GetConfig().GetString("server.listen"), nil, passwordAuthOption, publicKeyAuthOption)
 		if err != nil {
 			log.Fatal(err)
 		}
