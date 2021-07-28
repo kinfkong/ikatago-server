@@ -86,7 +86,7 @@ then
 fi
 
 echo "Downloading work..."
-update_file ./resources/gomoku-work.zip $DATA_DOWNLOAD_URL/gomoku-work.zip bfa70493a2e31f622bb3ae866799e259
+update_file ./resources/gomoku-work.zip $DATA_DOWNLOAD_URL/gomoku-work.zip 5d95fb3d0bdb1cea494c3f8be38b663d
 if [ $? -ne 0 ]
 then
     echo "Failed to download the work."

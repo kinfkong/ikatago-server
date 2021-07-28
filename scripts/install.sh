@@ -87,7 +87,7 @@ do
 done
 
 echo "Downloading weights..."
-update_file ./resources/weights.zip $DATA_DOWNLOAD_URL/weights.zip d0bad5372d51f4963efac2b0f55ac5ed
+update_file ./resources/weights.zip $DATA_DOWNLOAD_URL/weights.zip 73618c0b0bc8e69badf5a78ae3982417
 if [ $? -ne 0 ]
 then
     echo "Failed to download the weights."
@@ -101,7 +101,7 @@ then
     exit -1
 fi
 echo "Downloading work..."
-update_file ./resources/linux-work.zip $DATA_DOWNLOAD_URL/linux-work.zip 73bbd8786edab47bfefbc27c37887a07
+update_file ./resources/linux-work.zip $DATA_DOWNLOAD_URL/linux-work.zip e791aae7d393d9b1749407211eb7b78f
 if [ $? -ne 0 ]
 then
     echo "Failed to download the work."
