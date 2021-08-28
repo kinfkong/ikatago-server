@@ -34,6 +34,11 @@ PACKAGE=ubuntu-cuda-$CUDA_VERSION
 #then
 #    PACKAGE=$1
 #fi
+if [[ "$PACKAGE" == "ubuntu-cuda-11"* ]]
+then
+    # use cuda 11.1 instead
+    PACKAGE=ubuntu-cuda-11.1
+fi
 echo "USING PACKAGE: $PACKAGE"
 update_file() {
     FILE_PATH=$1
@@ -86,7 +91,7 @@ then
 fi
 
 echo "Downloading work..."
-update_file ./resources/gomoku-work.zip $DATA_DOWNLOAD_URL/gomoku-work.zip 5d95fb3d0bdb1cea494c3f8be38b663d
+update_file ./resources/gomoku-work.zip $DATA_DOWNLOAD_URL/gomoku-work.zip 7306ece9dea85e619ec3c3484796af7c
 if [ $? -ne 0 ]
 then
     echo "Failed to download the work."
@@ -120,8 +125,12 @@ echo "Using Thread Num: $SEARCH_THREAD_NUM"
 
 CMD="s/numSearchThreads = .*/numSearchThreads = $SEARCH_THREAD_NUM/g"
 sed -i "$CMD" ./work/data/configs/default_gtp.cfg
-echo "numNNServerThreadsPerModel = $GPU_NUM" >> ./work/data/configs/default_gtp.cfg
+CMD="s/^.*numNNServerThreadsPerModel.*$//g"
+sed -i "$CMD" ./work/data/configs/default_gtp.cfg
+CMD="s/^.*gpuToUseThread.*$//g"
+sed -i "$CMD" ./work/data/configs/default_gtp.cfg
 
+echo "numNNServerThreadsPerModel = $GPU_NUM" >> ./work/data/configs/default_gtp.cfg
 i=0
 while [ $i -lt $GPU_NUM ]
 do
@@ -135,5 +144,8 @@ for KATAGO_VERSION in $KATAGO_VERSIONS
 do
     mv ./resources/gomoku-$KATAGO_VERSION-$PACKAGE ./work/data/bins/gomoku-$KATAGO_VERSION
 done
+
+chmod +x ./work/*.sh
+chmod +x ./work/ikatago-server
 
 echo "Install Successfully, now you can run the ikatago-server"
