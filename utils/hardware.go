@@ -55,7 +55,7 @@ func GetHardwareInfo() *HardwareInfo {
 	}
 	hardwareInfo := &HardwareInfo{}
 	gpu, err := interceptGPUInfo()
-	if err != nil {
+	if gpu == nil {
 		gpu, err = ghw.GPU()
 	}
 	if err != nil {
