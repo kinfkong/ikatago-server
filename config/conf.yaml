@@ -21,6 +21,26 @@ katago:
   customConfigDir: ./data
   enableWeightsDetectionInDir: ./data/weights
 
+gomoku:
+  bins:
+    - name: mock-gomoku-katago # name it any name
+      path: ./gomoku-data/bins/run-mock-katago.sh # the katago bin file location
+      description: The mock katago
+    - name: test # name it any name
+      path: ./gomoku-data/bins/test.sh
+      description: for any command test
+  weights:
+    - name: 20b
+      path: ./gomoku-data/weights/model.bin.gz
+  configs:
+    - name: default
+      path: ./gomoku-data/configs/default_gtp.cfg
+  defaultBinName: mock-gomoku-katago
+  defaultWeightName: 20b
+  defaultConfigName: default
+  customConfigDir: ./gomoku-data
+  enableWeightsDetectionInDir: ./gomoku-data/weights
+
 use_nat: frp
 
 nats: # only the name configured in "user_nat" will be used

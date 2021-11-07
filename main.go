@@ -193,12 +193,21 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// check the katago manager
-	katagoManager := katago.GetManager()
-	if katagoManager == nil {
-		log.Fatal("katago config seems wrong...")
+	// check the supported engines
+	if config.GetConfig().Sub("katago") != nil {
+		engineType := "katago"
+		katagoManager := katago.GetManager(&engineType)
+		if katagoManager == nil {
+			log.Fatal("katago config seems wrong...")
+		}
 	}
-
+	if config.GetConfig().Sub("gomoku") != nil {
+		engineType := "gomoku"
+		gomokuManager := katago.GetManager(&engineType)
+		if gomokuManager == nil {
+			log.Fatal("gomoku config seems wrong...")
+		}
+	}
 	// start sshd
 	err = sshd.RunAsync()
 	if err != nil {

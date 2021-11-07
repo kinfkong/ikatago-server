@@ -1,5 +1,5 @@
 #!/bin/bash
-SVR_VERSION=2.1.1
+SVR_VERSION=3.0.0
 BIN_DIR=./bin
 BINARY_NAME=ikatago-server
 rm -rf $BIN_DIR && mkdir $BIN_DIR

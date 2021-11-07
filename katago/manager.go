@@ -53,17 +53,25 @@ type Manager struct {
 	CustomConfigDir             string         `json:"customConfigDir"`
 }
 
-var managerInstance *Manager
+var managerInstances map[string]*Manager = make(map[string]*Manager)
 var managerMu sync.Mutex
 var weightsDetectionLock sync.Mutex
 
 // GetManager returns the singleton instance of the Service
-func GetManager() *Manager {
+func GetManager(engineType *string) *Manager {
 	managerMu.Lock()
 	defer managerMu.Unlock()
-
+	finalEngineType := "katago"
+	if engineType != nil && len(*engineType) > 0 {
+		finalEngineType = *engineType
+	}
+	managerInstance := managerInstances[finalEngineType]
 	if managerInstance == nil {
-		managerInstance = NewManager(config.GetConfig().Sub("katago"))
+		managerInstance = NewManager(config.GetConfig().Sub(finalEngineType))
+		if managerInstance == nil {
+			return nil
+		}
+		managerInstances[finalEngineType] = managerInstance
 	}
 	return managerInstance
 }
@@ -92,6 +100,9 @@ func walkMatch(root, pattern string) ([]string, error) {
 
 // NewManager creates the kata manager
 func NewManager(configObject *viper.Viper) *Manager {
+	if configObject == nil {
+		return nil
+	}
 	manager := Manager{}
 	err := configObject.Unmarshal(&manager)
 	if err != nil {
