@@ -108,7 +108,19 @@ func RunAsync() error {
 			return
 		}
 		username := s.User()
-		err = utils.GetCmdManager().RunCommand(&username, "katago", cmd)
+		extCmd, err := utils.GetCmdManager().PrepareCommand(&username, "katago", cmd)
+		if err != nil {
+			log.Printf("INFO user [%s] session done\n", s.User())
+			log.Println(err)
+			return
+		}
+		extCmd.OnClientClosed = func(_ error) {
+			err = utils.GetCmdManager().KillCommand(extCmd.ID)
+			if err != nil {
+				log.Printf("ERROR failed to kill cmmand: %+v", err)
+			}
+		}
+		err = utils.GetCmdManager().RunCommand(extCmd)
 		if err != nil {
 			log.Println(err)
 		}

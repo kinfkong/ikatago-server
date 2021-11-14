@@ -51,8 +51,3 @@ nats: # only the name configured in "user_nat" will be used
 users:
   file: ./data/userlist.txt
 
-report:
-  url: http://localhost:4200/api/ikatago/report-log/batch
-
-cluster:
-  serverUrl: http://localhost:4200

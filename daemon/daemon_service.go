@@ -14,10 +14,14 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+type HeartBeatCommandHandler func(*ResponseCommand) error
+
 // Service type
 type Service struct {
 	queue        *utils.MB
 	PlatformName string
+	workerID     string
+	handlers     map[string]HeartBeatCommandHandler
 }
 
 var serviceInstance *Service
@@ -30,8 +34,10 @@ func GetService() *Service {
 
 	if serviceInstance == nil {
 		serviceInstance = &Service{
-			queue: utils.NewMB(4096),
+			queue:    utils.NewMB(4096),
+			handlers: make(map[string]HeartBeatCommandHandler),
 		}
+		serviceInstance.handlers["kill"] = KillCommandHandler
 	}
 	return serviceInstance
 }
@@ -47,6 +53,7 @@ func (service *Service) IsDaemonAvailable() bool {
 func (service *Service) StartDaemonReport() {
 	log.Printf("Daemon report started")
 	workerID := uuid.NewV4().String()
+	service.workerID = workerID
 	go func() {
 		for {
 			// run the gather infos
@@ -81,11 +88,13 @@ func (service *Service) StartDaemonReport() {
 		// do real sent
 		if len(batchData) > 0 {
 			data, _ := json.Marshal(batchData)
-			_, err := service.doSendWithRetry(data)
+			response, err := service.doSendWithRetry(data)
 			if err != nil {
 				log.Printf("ERROR failed to send data")
 				failedCount = failedCount + 1
 			} else {
+				// got heartbeat response
+				service.handleHeartbeatResponse(response)
 				failedCount = 0
 			}
 			if failedCount >= 1 {
@@ -95,7 +104,30 @@ func (service *Service) StartDaemonReport() {
 	}
 }
 
-func (server *Service) doSendWithRetry(data []byte) (string, error) {
+func (service *Service) handleHeartbeatResponse(response string) error {
+
+	workerResponse := WorkerResponse{}
+	err := json.Unmarshal([]byte(response), &workerResponse)
+	if err != nil {
+		log.Printf("ERROR failed to unmarshal response: %v", err)
+		return err
+	}
+	commands := workerResponse.Commands
+	for i, command := range commands {
+		if command.WorkerID != service.workerID {
+			// ignore
+			continue
+		}
+		handler := service.handlers[command.Command]
+		if handler == nil {
+			continue
+		}
+		go handler(&commands[i])
+	}
+	return nil
+}
+
+func (service *Service) doSendWithRetry(data []byte) (string, error) {
 	daemonPort := config.GetConfig().GetInt("daemon.port")
 	daemonReportUrl := "http://localhost:" + strconv.Itoa(daemonPort) + "/api/worker/data"
 	i := 0

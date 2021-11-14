@@ -12,6 +12,8 @@ import (
 var cmdManagerInstance *CmdManager
 var cmdManagerMu sync.Mutex
 
+type OnClientClosedHandler func(error)
+
 type ExtendedCmd struct {
 	// ID is the id of the command, assigned internally
 	ID          string
@@ -20,8 +22,9 @@ type ExtendedCmd struct {
 	// Cmd the command it self
 	Cmd *exec.Cmd
 	// Username the ikatago user that runs this command
-	Username  *string
-	StartedAt *time.Time
+	Username       *string
+	StartedAt      *time.Time
+	OnClientClosed OnClientClosedHandler
 }
 
 type CommandInfo struct {
@@ -54,25 +57,47 @@ func GetCmdManager() *CmdManager {
 }
 
 // RunCommand runs the command sync (will block until the cmd run done)
-func (cmdManager *CmdManager) RunCommand(username *string, commandType string, cmd *exec.Cmd) error {
+func (cmdManager *CmdManager) RunCommand(cmd *ExtendedCmd) error {
 	if cmd == nil {
 		return errors.New("cmd cannot be nil")
 	}
 
 	now := time.Now()
+	cmd.StartedAt = &now
+	cmdManager.addCmd(cmd)
+
+	err := cmd.Cmd.Run()
+	// remove it after the command done
+	cmdManager.removeCmdByID(cmd.ID)
+	return err
+}
+
+// PrepareCommand runs the command sync (will block until the cmd run done)
+func (cmdManager *CmdManager) PrepareCommand(username *string, commandType string, cmd *exec.Cmd) (*ExtendedCmd, error) {
+	if cmd == nil {
+		return nil, errors.New("cmd cannot be nil")
+	}
+
+	now := time.Now()
 	// add to the current commands
 	cmdID := uuid.NewV4().String()
-	cmdManager.addCmd(&ExtendedCmd{
+	result := &ExtendedCmd{
 		ID:          cmdID,
 		CommandType: commandType,
 		Username:    username,
 		Cmd:         cmd,
 		StartedAt:   &now,
-	})
-	err := cmd.Run()
-	// remove it after the command done
-	cmdManager.removeCmdByID(cmdID)
-	return err
+	}
+	// change the cmd stdin
+	rawReader := cmd.Stdin
+	reader := NewIOReaderWrapper(rawReader)
+	reader.onClientClosed = func(err error) {
+		if result.OnClientClosed != nil {
+			result.OnClientClosed(err)
+		}
+	}
+	cmd.Stdin = reader
+	return result, nil
 }
 
 func (cmdManager *CmdManager) KillCommand(cmdID string) error {
