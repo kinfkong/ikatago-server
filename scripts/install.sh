@@ -15,6 +15,8 @@ fi
 
 OS_NAME=$(cat /etc/os-release | grep "^NAME=" | sed 's/NAME="\(.*\)"/\1/g')
 OS_VERSION=$(cat /etc/os-release | grep "^VERSION_ID=" | sed 's/VERSION_ID="\(.*\)"/\1/g' | tr -d [.])
+#OS_NAME="Ubuntu"
+#OS_VERSION="2004"
 if [ "$OS_NAME" != "Ubuntu" ]
 then
     echo "Failed to installed. Only Ubuntu 18.04 or Ubuntu 20.04 are supported. Current is " + $OS_NAME + " " + $OS_VERSION
