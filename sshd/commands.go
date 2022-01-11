@@ -50,7 +50,7 @@ func isValidArg(cmd string, arg string) bool {
 		"benchmark": {"-model", "-config"},
 		"genconfig": {"-model"},
 		"analysis":  {"-model", "-config"},
-		"tuner":     {"-model"},
+		"tuner":     {"-model", "-config"},
 	}
 	args, ok := knownCmds[cmd]
 	if !ok {
