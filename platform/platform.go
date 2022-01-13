@@ -66,7 +66,7 @@ func decrypt(encrypted string, secretKey string) (string, error) {
 
 // Decrypt the platform data
 func (p *Platform) Decrypt(dataEncryptKeyPrefix string) error {
-	dataEncryptKey := dataEncryptKeyPrefix + "kjdks2ikdjskfjdks"
+	dataEncryptKey := dataEncryptKeyPrefix + "xxxxxxxx"
 	decrypted, err := decrypt(p.Oss.EncryptedData, dataEncryptKey)
 	ossData := OssData{}
 	err = json.Unmarshal([]byte(decrypted), &ossData)

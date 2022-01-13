@@ -76,13 +76,13 @@ var (
 var _ = func() error {
 	os.Setenv("KNAT_AUTOGEN_TUNNEL_NAME", myutils.RandStringRunes(16))
 	if os.Getenv("KNAT_SERVER_ADDR") == "" {
-		os.Setenv("KNAT_SERVER_ADDR", "120.53.123.43")
+		os.Setenv("KNAT_SERVER_ADDR", "xx.xx.xx.xx")
 	}
 	if os.Getenv("KNAT_SERVER_PORT") == "" {
-		os.Setenv("KNAT_SERVER_PORT", "7001")
+		os.Setenv("KNAT_SERVER_PORT", "xxxx")
 	}
 	if os.Getenv("KNAT_SERVER_TOKEN") == "" {
-		os.Setenv("KNAT_SERVER_TOKEN", "kinfkong")
+		os.Setenv("KNAT_SERVER_TOKEN", "xxxx")
 	}
 	return nil
 }()
