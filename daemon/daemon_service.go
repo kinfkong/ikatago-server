@@ -1,0 +1,160 @@
+package daemon
+
+import (
+	"encoding/json"
+	"errors"
+	"log"
+	"strconv"
+	"sync"
+	"time"
+
+	"github.com/kinfkong/ikatago-server/config"
+	"github.com/kinfkong/ikatago-server/nat"
+	"github.com/kinfkong/ikatago-server/utils"
+	uuid "github.com/satori/go.uuid"
+)
+
+type HeartBeatCommandHandler func(*ResponseCommand) error
+
+// Service type
+type Service struct {
+	queue        *utils.MB
+	PlatformName string
+	workerID     string
+	handlers     map[string]HeartBeatCommandHandler
+}
+
+var serviceInstance *Service
+var serviceMu sync.Mutex
+
+// GetService returns the singleton instance of the Service
+func GetService() *Service {
+	serviceMu.Lock()
+	defer serviceMu.Unlock()
+
+	if serviceInstance == nil {
+		serviceInstance = &Service{
+			queue:    utils.NewMB(4096),
+			handlers: make(map[string]HeartBeatCommandHandler),
+		}
+		serviceInstance.handlers["kill"] = KillCommandHandler
+	}
+	return serviceInstance
+}
+func (service *Service) IsDaemonAvailable() bool {
+	port := config.GetConfig().Get("daemon.port")
+	if port == nil {
+		return false
+	}
+	v, err := utils.GetJSONIntNumber(port)
+	return err == nil && v > 0
+}
+
+func (service *Service) StartDaemonReport() {
+	log.Printf("Daemon report started")
+	workerID := uuid.NewV4().String()
+	service.workerID = workerID
+	go func() {
+		for {
+			// run the gather infos
+			extraInfo := make(map[string]interface{})
+			natProvider, err := nat.GetNatProvider()
+			if err == nil {
+				natInfo, err := natProvider.GetInfo()
+				if err == nil {
+					extraInfo["nat"] = map[string]interface{}{
+						"host": natInfo.Host,
+						"port": natInfo.Port,
+					}
+				}
+			}
+			workerData := WorkerData{
+				ID:              workerID,
+				WorkerType:      "ikatago-server",
+				Timestamp:       time.Now(),
+				GPUs:            utils.GetGPUInfo(),
+				RunningCommands: utils.GetCmdManager().GetAllCmdInfo(),
+				ExtraInfo:       extraInfo,
+			}
+			service.AddToQueue(workerData)
+			time.Sleep(time.Second)
+		}
+
+	}()
+	failedCount := 0
+	for {
+		batchData := service.queue.WaitTimeoutOrMax(time.Duration(time.Second), 100)
+		// log.Printf("fowarding: %d messages", len(batchData))
+		// do real sent
+		if len(batchData) > 0 {
+			data, _ := json.Marshal(batchData)
+			response, err := service.doSendWithRetry(data)
+			if err != nil {
+				log.Printf("ERROR failed to send data")
+				failedCount = failedCount + 1
+			} else {
+				// got heartbeat response
+				service.handleHeartbeatResponse(response)
+				failedCount = 0
+			}
+			if failedCount >= 1 {
+				time.Sleep(time.Duration(failedCount) * time.Second)
+			}
+		}
+	}
+}
+
+func (service *Service) handleHeartbeatResponse(response string) error {
+
+	workerResponse := WorkerResponse{}
+	err := json.Unmarshal([]byte(response), &workerResponse)
+	if err != nil {
+		log.Printf("ERROR failed to unmarshal response: %v", err)
+		return err
+	}
+	commands := workerResponse.Commands
+	for i, command := range commands {
+		if command.WorkerID != service.workerID {
+			// ignore
+			continue
+		}
+		handler := service.handlers[command.Command]
+		if handler == nil {
+			continue
+		}
+		go handler(&commands[i])
+	}
+	return nil
+}
+
+func (service *Service) doSendWithRetry(data []byte) (string, error) {
+	daemonPort := config.GetConfig().GetInt("daemon.port")
+	daemonReportUrl := "http://localhost:" + strconv.Itoa(daemonPort) + "/api/worker/data"
+	i := 0
+	response := ""
+	for i = 0; i < 3; i++ {
+		var err error = nil
+		response, err = utils.DoHTTPRequest("POST", daemonReportUrl, map[string]string{
+			"Content-Type": "application/json",
+		}, data)
+		if err != nil {
+			log.Printf("ERROR failed to send request")
+			time.Sleep(100 * time.Millisecond)
+		} else {
+			break
+		}
+	}
+	if i == 3 {
+		return response, errors.New("failed to send requests")
+	}
+	return response, nil
+}
+
+func (service *Service) AddToQueue(data interface{}) error {
+	err := service.queue.Add(data)
+	if err != nil {
+		log.Printf("ERROR failed to add data to queue: data:%v error: %v", data, err)
+		return errors.New("failed_add_data_to_queue")
+	}
+	return nil
+}

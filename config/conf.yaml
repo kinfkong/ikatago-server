@@ -3,50 +3,51 @@ server:
   
 katago:
   bins:
-    - name: katago-1.4.5 # name it any name
-      path: /usr/local/bin/katago # the katago bin file location
-      description: The local 1.4.5 katago
-      # runner: aistudio-runner
-    - name: katago-1.5.0 # name it any name
-      path: /Users/wangjinggang/gochess/ikatago-credentials/aistudio/katago.1.5.0 # the katago bin file location
-      runner: aistudio-runner # optional, only baidu aistudio needs this. 
-    - name: katago-remote
-      path: /Users/wangjinggang/gochess/remote/katago-rent
-      runner: cmd
-    - name: sleep
-      path: ./data/bins/mock_katago.sh
-      runner: cmd
+    - name: mock-katago # name it any name
+      path: ./data/bins/run-mock-katago.sh # the katago bin file location
+      description: The mock katago
+    - name: test # name it any name
+      path: ./data/bins/test.sh
+      description: for any command test
   weights:
     - name: 20b
       path: ./data/weights/model.bin.gz
-    - name: 40b
-      path: /Users/wangjinggang/gochess/katago/40b.bin.gz
-      optional: true
   configs:
-    - name: 1po
-      path: /Users/wangjinggang/gochess/remote/katago_1v.cfg
-  defaultBinName: katago-remote
+    - name: default
+      path: ./data/configs/default_gtp.cfg
+  defaultBinName: mock-katago
   defaultWeightName: 20b
-  defaultConfigName: 1po
+  defaultConfigName: default
   customConfigDir: ./data
   enableWeightsDetectionInDir: ./data/weights
 
-use_nat: frpBykinfkong
+gomoku:
+  bins:
+    - name: mock-gomoku-katago # name it any name
+      path: ./gomoku-data/bins/run-mock-katago.sh # the katago bin file location
+      description: The mock katago
+    - name: test # name it any name
+      path: ./gomoku-data/bins/test.sh
+      description: for any command test
+  weights:
+    - name: 20b
+      path: ./gomoku-data/weights/model.bin.gz
+  configs:
+    - name: default
+      path: ./gomoku-data/configs/default_gtp.cfg
+  defaultBinName: mock-gomoku-katago
+  defaultWeightName: 20b
+  defaultConfigName: default
+  customConfigDir: ./gomoku-data
+  enableWeightsDetectionInDir: ./gomoku-data/weights
+
+use_nat: frp
 
 nats: # only the name configured in "user_nat" will be used
-  frpBykinfkong:
+  frp:
     type: frp
     config_file: ./config/frpc.txt
-  frpBynatfrp:
-    type: frp
-    config_file: ./config/nat-frpc.ini
-  direct: 
-    type: direct
-    host: 192.168.1.222 # the host or ip that you can connect this server directly
-    port: 2222 # generally, it should equals to the server listen port
 
 users:
-  file: ./userlist.txt
+  file: ./data/userlist.txt
 
-report:
-  url: http://localhost:4200/api/ikatago/report-log/batch

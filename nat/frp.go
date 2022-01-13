@@ -22,6 +22,8 @@ import (
 	"github.com/fatedier/frp/utils/version"
 	"github.com/fatedier/golib/crypto"
 	myconfig "github.com/kinfkong/ikatago-server/config"
+	"github.com/kinfkong/ikatago-server/event"
+	myutils "github.com/kinfkong/ikatago-server/utils"
 	"github.com/spf13/cobra"
 
 	// import the blank assets
@@ -72,13 +74,16 @@ var (
 
 // do some stuff
 var _ = func() error {
-	os.Setenv("KNAT_SERVER_ADDR", "120.53.123.43")
-	os.Setenv("KNAT_SERVER_PORT", "7001")
-	os.Setenv("KNAT_SERVER_TOKEN", "xxxx")
-
-	os.Setenv("KNAT_FOR_COLAB_SERVER_ADDR", "202.182.114.17")
-	os.Setenv("KNAT_FOR_COLAB_SERVER_PORT", "10888")
-	os.Setenv("KNAT_FOR_COLAB_SERVER_TOKEN", "xxxx")
+	os.Setenv("KNAT_AUTOGEN_TUNNEL_NAME", myutils.RandStringRunes(16))
+	if os.Getenv("KNAT_SERVER_ADDR") == "" {
+		os.Setenv("KNAT_SERVER_ADDR", "xx.xx.xx.xx")
+	}
+	if os.Getenv("KNAT_SERVER_PORT") == "" {
+		os.Setenv("KNAT_SERVER_PORT", "xxxx")
+	}
+	if os.Getenv("KNAT_SERVER_TOKEN") == "" {
+		os.Setenv("KNAT_SERVER_TOKEN", "xxxx")
+	}
 	return nil
 }()
 
@@ -279,9 +284,21 @@ func (frp *FRP) RunAsync() error {
 		}
 	}()
 
-	return frp.waitUntilReady(60)
+	err := frp.waitUntilReady(60)
+	if err != nil {
+		return err
+	}
+	frp.checkProxyStatusAsync()
+	return nil
 }
-
+func (frp *FRP) checkProxyStatusAsync() {
+	go func() {
+		for {
+			frp.waitUntilReady(60)
+			time.Sleep(time.Second)
+		}
+	}()
+}
 func (frp *FRP) waitUntilReady(timeout int) error {
 	ready := false
 	endTime := time.Now().Add(time.Duration(timeout) * time.Second)
@@ -324,8 +341,20 @@ func (frp *FRP) waitUntilReady(timeout int) error {
 						if len(host) == 0 {
 							host = runningService.GetClientCommonConf().ServerAddr
 						}
-						frp.Port = port
-						frp.Host = host
+
+						if frp.Port != port || frp.Host != host {
+							changed := false
+							if frp.Host != "" {
+								changed = true
+							}
+
+							frp.Port = port
+							frp.Host = host
+							if changed {
+								syslog.Printf("port changed to: %s:%d", host, port)
+								event.GetService().Publish(event.EventFRPPortChanged, host, port)
+							}
+						}
 						ready = true
 					}
 				}

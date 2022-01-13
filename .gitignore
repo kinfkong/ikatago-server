@@ -9,3 +9,7 @@
 /archive/work
 /archive/*.zip
 /test
+/secret-bin
+.DS_Store
+/main
+/gomoku-data

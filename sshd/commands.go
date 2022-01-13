@@ -26,6 +26,7 @@ func init() {
 }
 
 type runkatagoOptsType struct {
+	EngineType      *string `long:"engine-type" description:"the enginetype, katago or gomoku" default:"katago"`
 	Name            *string `long:"name" description:"the katago bin name"`
 	Weight          *string `long:"weight" description:"the katago weight name"`
 	Config          *string `long:"config" description:"the katago config name"`
@@ -35,13 +36,21 @@ type runkatagoOptsType struct {
 	TransmitMoveNum int     `long:"transmit-move-num" description:"limits number of moves when transmission during analyze" default:"20"`
 }
 
+type queryServerOptsType struct {
+	EngineType *string `long:"engine-type" description:"the enginetype, katago or gomoku" default:"katago"`
+}
+
+type scpOptsType struct {
+	EngineType *string `long:"engine-type" description:"the enginetype, katago or gomoku" default:"katago"`
+}
+
 func isValidArg(cmd string, arg string) bool {
 	knownCmds := map[string][]string{
 		"gtp":       {"-model", "-config"},
 		"benchmark": {"-model", "-config"},
 		"genconfig": {"-model"},
 		"analysis":  {"-model", "-config"},
-		"tuner":     {"-model"},
+		"tuner":     {"-model", "-config"},
 	}
 	args, ok := knownCmds[cmd]
 	if !ok {
@@ -65,6 +74,10 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	if len(subcommands) == 0 {
 		// gtp by default
 		subcommands = append(subcommands, "gtp")
+	}
+	katagoManager := katago.GetManager(runKatagoOpts.EngineType)
+	if katagoManager == nil {
+		return nil, errors.New("invalid_engine_type")
 	}
 	found := false
 	for _, subcommand := range subcommands {
@@ -99,11 +112,11 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	binName := katago.GetManager().DefaultBinName
+	binName := katagoManager.DefaultBinName
 	if runKatagoOpts.Name != nil {
 		binName = *runKatagoOpts.Name
 	}
-	cmd, err := katago.GetManager().Run(binName, subcommands)
+	cmd, err := katagoManager.Run(binName, subcommands)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +156,10 @@ func runKatago(session ssh.Session, args ...string) (*exec.Cmd, error) {
 }
 
 func replaceKataConfigPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoOptsType, subcommands []string) ([]string, error) {
-	m := katago.GetManager()
+	m := katago.GetManager(runKatagoOpts.EngineType)
+	if m == nil {
+		return nil, errors.New("invalid_engine_type")
+	}
 	var configFile *string = nil
 	if runKatagoOpts.CustomConfig != nil {
 		theFile := fmt.Sprintf("%s/%s/%s", m.CustomConfigDir, session.User(), *runKatagoOpts.CustomConfig)
@@ -177,7 +193,10 @@ func replaceKataConfigPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoO
 }
 
 func replaceKataWeightPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoOptsType, subcommands []string) ([]string, error) {
-	m := katago.GetManager()
+	m := katago.GetManager(runKatagoOpts.EngineType)
+	if m == nil {
+		return nil, errors.New("invalid_engine_type")
+	}
 	// no custom weight file, use the built-in weight
 	weightName := runKatagoOpts.Weight
 	if weightName == nil {
@@ -205,7 +224,16 @@ func replaceKataWeightPlaceHolder(session ssh.Session, runKatagoOpts *runkatagoO
 }
 
 func queryServer(session ssh.Session, args ...string) (*exec.Cmd, error) {
-	katagoManager := katago.GetManager()
+	queryServerOpts := queryServerOptsType{}
+	_, err := flags.ParseArgs(&queryServerOpts, args)
+	if err != nil {
+		log.Printf("ERROR: %v", err)
+		return nil, err
+	}
+	katagoManager := katago.GetManager(queryServerOpts.EngineType)
+	if katagoManager == nil {
+		return nil, errors.New("invalid_engine_type")
+	}
 	kataNames := make([]model.ServerInfoItem, 0)
 	kataConfigs := make([]model.ServerInfoItem, 0)
 	kataWeights := make([]model.ServerInfoItem, 0)
@@ -244,6 +272,7 @@ func queryServer(session ssh.Session, args ...string) (*exec.Cmd, error) {
 		DefaultKataWeight:  katagoManager.DefaultWeightName,
 		DefaultKataConfig:  katagoManager.DefaultConfigName,
 		DefaultKataName:    katagoManager.DefaultBinName,
+		GPUs:               utils.GetGPUInfo(),
 	}
 	b, err := json.Marshal(serverInfo)
 	if err != nil {
@@ -258,7 +287,17 @@ func copyConfig(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	if len(args) == 0 {
 		return nil, errors.New("no_target_file_name")
 	}
-	katagoManager := katago.GetManager()
+	scpOpts := scpOptsType{}
+	_, err := flags.ParseArgs(&scpOpts, args)
+	if err != nil {
+		log.Printf("ERROR failed to parse kagato args: %+v\n", args)
+		return nil, errors.New("invalid_command_args")
+	}
+
+	katagoManager := katago.GetManager(scpOpts.EngineType)
+	if katagoManager == nil {
+		return nil, errors.New("invalid_engine_type")
+	}
 	outputDir := fmt.Sprintf("%s/%s", katagoManager.CustomConfigDir, session.User())
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 		os.MkdirAll(outputDir, 0755)
@@ -266,7 +305,7 @@ func copyConfig(session ssh.Session, args ...string) (*exec.Cmd, error) {
 	outputFile := fmt.Sprintf("%s/%s", outputDir, args[0])
 
 	buf := new(strings.Builder)
-	_, err := io.Copy(buf, session)
+	_, err = io.Copy(buf, session)
 	if err != nil {
 		log.Printf("ERROR failed to read session: %+v\n", err)
 		return nil, err

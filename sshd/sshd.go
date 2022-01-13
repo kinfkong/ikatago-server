@@ -5,18 +5,14 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/gliderlabs/ssh"
-	"github.com/google/uuid"
 	"github.com/kinfkong/ikatago-server/config"
-	"github.com/kinfkong/ikatago-server/report"
+	"github.com/kinfkong/ikatago-server/utils"
 )
 
 // UserInfo represents the user info
@@ -40,6 +36,11 @@ func RegisterCommandHandler(commandName string, handler SSHCommandHandler) {
 }
 
 func readUsers(filename string) []UserInfo {
+	if config.GetConfig().GetBool("clusterModeEnabled") {
+		// ignore the local users for cluster mode
+		log.Println("LOCAL USER is ignore because it is in cluster mode")
+		return make([]UserInfo, 0)
+	}
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -106,89 +107,24 @@ func RunAsync() error {
 			log.Printf("INFO user [%s] session done\n", s.User())
 			return
 		}
-		sessionID := uuid.New().String()
-		startedAt := time.Now()
-		report.GetService().AddToQueue(report.ReportLog{
-			SessionID:       sessionID,
-			Platform:        report.GetService().PlatformName,
-			ConnectUsername: s.User(),
-			EventType:       "SESSION_START",
-			EventStartedAt:  startedAt,
-			EventEndedAt:    startedAt,
-			Duration:        0,
-		})
-		ended := make(chan bool)
-		// monitor
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			shouldEnd := false
-			for {
-				select {
-				case <-ended:
-					shouldEnd = true
-				default:
-					// Do other stuff
-				}
-
-				if !shouldEnd {
-					time.Sleep(5 * time.Second)
-				}
-
-				now := time.Now()
-				duration := now.Sub(startedAt).Seconds()
-				report.GetService().AddToQueue(report.ReportLog{
-					SessionID:       sessionID,
-					Platform:        report.GetService().PlatformName,
-					ConnectUsername: s.User(),
-					EventType:       "SESSION_ONGOING",
-					EventStartedAt:  startedAt,
-					EventEndedAt:    now,
-					Duration:        int(math.Ceil(duration)),
-				})
-				if shouldEnd {
-					return
-				}
-			}
-		}()
-		if err := cmd.Run(); err != nil {
+		username := s.User()
+		extCmd, err := utils.GetCmdManager().PrepareCommand(&username, "katago", cmd)
+		if err != nil {
 			log.Printf("INFO user [%s] session done\n", s.User())
 			log.Println(err)
-			ended <- true
-			wg.Wait()
-
-			now := time.Now()
-			duration := now.Sub(startedAt).Seconds()
-			report.GetService().AddToQueue(report.ReportLog{
-				SessionID:       sessionID,
-				Platform:        report.GetService().PlatformName,
-				ConnectUsername: s.User(),
-				EventType:       "SESSION_END",
-				EventStartedAt:  startedAt,
-				EventEndedAt:    now,
-				Duration:        int(math.Ceil(duration)),
-			})
-
 			return
 		}
-		log.Printf("INFO user [%s] session done\n", s.User())
-		ended <- true
-		wg.Wait()
-
-		now := time.Now()
-		duration := now.Sub(startedAt).Seconds()
-		report.GetService().AddToQueue(report.ReportLog{
-			SessionID:       sessionID,
-			Platform:        report.GetService().PlatformName,
-			ConnectUsername: s.User(),
-			EventType:       "SESSION_END",
-			EventStartedAt:  startedAt,
-			EventEndedAt:    now,
-			Duration:        int(math.Ceil(duration)),
-		})
-
+		extCmd.OnClientClosed = func(_ error) {
+			err = utils.GetCmdManager().KillCommand(extCmd.ID)
+			if err != nil {
+				log.Printf("ERROR failed to kill cmmand: %+v", err)
+			}
+		}
+		err = utils.GetCmdManager().RunCommand(extCmd)
+		if err != nil {
+			log.Println(err)
+		}
+		log.Printf("INFO user [%s] session done\n", username)
 	})
 
 	passwordAuthOption := ssh.PasswordAuth(func(ctx ssh.Context, password string) bool {
@@ -199,8 +135,21 @@ func RunAsync() error {
 		}
 		return false
 	})
+	publicKeyAuthOption := ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
+		publicKeyInConfig := config.GetConfig().GetString("auth.publicKey")
+		if publicKeyInConfig == "" {
+			return false
+		}
+		pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(publicKeyInConfig))
+		if err != nil {
+			log.Printf("Failed to read key: %+v", err)
+			return false
+		}
+		return ssh.KeysEqual(pubKey, key)
+
+	})
 	go func() {
-		err := ssh.ListenAndServe(config.GetConfig().GetString("server.listen"), nil, passwordAuthOption)
+		err := ssh.ListenAndServe(config.GetConfig().GetString("server.listen"), nil, passwordAuthOption, publicKeyAuthOption)
 		if err != nil {
 			log.Fatal(err)
 		}

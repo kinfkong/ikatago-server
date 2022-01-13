@@ -1,9 +1,10 @@
 package model
 
 type SSHLoginInfo struct {
-	Host string `json:"host"`
-	Port int    `json:"port"`
-	User string `json:"user"`
+	Host      string `json:"host"`
+	Port      int    `json:"port"`
+	User      string `json:"user"`
+	Protected bool   `json:"protected"`
 }
 type ServerInfoItem struct {
 	Name        string  `json:"name"`
@@ -18,4 +19,5 @@ type ServerInfo struct {
 	DefaultKataName    string           `json:"defaultKataName"`
 	DefaultKataWeight  string           `json:"defaultKataWeight"`
 	DefaultKataConfig  string           `json:"defaultKataConfig"`
+	GPUs               []string         `json:"gpus"`
 }

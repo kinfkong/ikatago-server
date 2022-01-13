@@ -21,7 +21,6 @@ type GTPWriter struct {
 	writer               io.Writer
 	buffer               *bytes.Buffer
 	latestInfoWriteAt    *time.Time
-	firstWrite           bool
 }
 
 type infoData struct {
@@ -47,7 +46,7 @@ func (writer *GTPWriter) Write(buf []byte) {
 	}
 	//log.Printf("DEBUG got new buffer[%v]\n", string(buf))
 	// split the whole buffer by lines
-	content := string(writer.buffer.Bytes())
+	content := writer.buffer.String()
 	// log.Printf("DEBUG content[%v]\n", content)
 	lines := strings.Split(content, "\n")
 	if len(lines) == 0 {
@@ -127,9 +126,14 @@ func (writer *GTPWriter) processLine(line string) string {
 		infos = strings.Split(line, "info")
 	}
 	// log.Printf("DEBUG infos found: %v\n", len(infos))
-	infoDatas := make([]infoData, len(infos))
+	infoDatas := make([]infoData, 0)
 	m := regexp.MustCompile(`visits ([0-9]+)`)
-	for i, info := range infos {
+	// log.Printf("GOT LINE[%s]\r\n", line)
+	for _, info := range infos {
+		if len(info) == 0 {
+			continue
+		}
+		// log.Printf("GOT INFO index[%d] [%s]\r\n", i, info)
 		visits := 0
 		match := m.FindStringSubmatch(info)
 		if len(match) > 1 {
@@ -139,16 +143,15 @@ func (writer *GTPWriter) processLine(line string) string {
 			}
 			visits = v
 		}
-		infoDatas[i] = infoData{
+		infoDatas = append(infoDatas, infoData{
 			visits: visits,
 			info:   info,
-		}
+		})
 	}
 	sort.SliceStable(infoDatas, func(i, j int) bool {
 		return infoDatas[i].visits > infoDatas[j].visits
 	})
 	var buffer bytes.Buffer
-
 	for i, infoData := range infoDatas {
 		if i >= writer.NumOfTransmitMoves {
 			break

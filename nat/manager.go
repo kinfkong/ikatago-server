@@ -3,12 +3,22 @@ package nat
 import (
 	"errors"
 	"log"
+	"sync"
 
 	"github.com/kinfkong/ikatago-server/config"
 )
 
+var gProvider Provider = nil
+var gProviderMutex sync.Mutex
+
 // GetNatProvider gets the nat provider
 func GetNatProvider() (Provider, error) {
+	gProviderMutex.Lock()
+	defer gProviderMutex.Unlock()
+
+	if gProvider != nil {
+		return gProvider, nil
+	}
 	// read the name from config
 	natName := config.GetConfig().GetString("use_nat")
 	if len(natName) == 0 {
@@ -40,5 +50,6 @@ func GetNatProvider() (Provider, error) {
 		log.Printf("ERROR cannot init nat")
 		return nil, err
 	}
+	gProvider = provider
 	return provider, nil
 }

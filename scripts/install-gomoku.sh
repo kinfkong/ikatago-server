@@ -1,4 +1,6 @@
 #!/bin/bash
+DATA_DOWNLOAD_URL="http://8.130.167.86:8080/api/ikatago/resources/download/gomoku-all"
+
 OS_NAME=$(cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME="\(.*\)"/\1/g' | tr '[:upper:]' '[:lower:]')
 
 GPU_NAME=$(nvidia-smi -q | grep "Product Name" | head -n 1 | cut -d":" -f2 | xargs)
@@ -32,6 +34,11 @@ PACKAGE=ubuntu-cuda-$CUDA_VERSION
 #then
 #    PACKAGE=$1
 #fi
+if [[ "$PACKAGE" == "ubuntu-cuda-11"* ]]
+then
+    # use cuda 11.1 instead
+    PACKAGE=ubuntu-cuda-11.1
+fi
 echo "USING PACKAGE: $PACKAGE"
 update_file() {
     FILE_PATH=$1
@@ -67,7 +74,7 @@ mkdir -p ./resources
 echo "Downloading engines..."
 for KATAGO_VERSION in $KATAGO_VERSIONS
 do
-    update_file ./resources/gomoku-$KATAGO_VERSION-$PACKAGE.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-$KATAGO_VERSION-$PACKAGE.zip
+    update_file ./resources/gomoku-$KATAGO_VERSION-$PACKAGE.zip $DATA_DOWNLOAD_URL/gomoku-$KATAGO_VERSION-$PACKAGE.zip
     if [ $? -ne 0 ]
     then
         echo "Failed to download the engines."
@@ -76,7 +83,7 @@ do
 done
 
 echo "Downloading weights..."
-update_file ./resources/gomoku-weights.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-weights.zip b8a00e134b7ed1782349ae476763b803
+update_file ./resources/gomoku-weights.zip $DATA_DOWNLOAD_URL/gomoku-weights.zip
 if [ $? -ne 0 ]
 then
     echo "Failed to download the weights."
@@ -84,7 +91,7 @@ then
 fi
 
 echo "Downloading work..."
-update_file ./resources/gomoku-work.zip https://ikatago-resources.oss-cn-beijing.aliyuncs.com/all/gomoku-work.zip 1c0a247017ad74a461d78fd56c8fe2c8
+update_file ./resources/gomoku-work.zip $DATA_DOWNLOAD_URL/gomoku-work.zip 7306ece9dea85e619ec3c3484796af7c
 if [ $? -ne 0 ]
 then
     echo "Failed to download the work."
@@ -113,13 +120,17 @@ mv ./resources/gomoku-weights ./work/data/weights
 mkdir -p ./work/data/configs
 rm -rf ./work/data/configs/default_gtp.cfg
 mv ./work/default.cfg ./work/data/configs/default_gtp.cfg
-SEARCH_THREAD_NUM=$(($GPU_NUM * 25))
+SEARCH_THREAD_NUM=$(($GPU_NUM * 48))
 echo "Using Thread Num: $SEARCH_THREAD_NUM"
 
 CMD="s/numSearchThreads = .*/numSearchThreads = $SEARCH_THREAD_NUM/g"
 sed -i "$CMD" ./work/data/configs/default_gtp.cfg
-echo "numNNServerThreadsPerModel = $GPU_NUM" >> ./work/data/configs/default_gtp.cfg
+CMD="s/^.*numNNServerThreadsPerModel.*$//g"
+sed -i "$CMD" ./work/data/configs/default_gtp.cfg
+CMD="s/^.*gpuToUseThread.*$//g"
+sed -i "$CMD" ./work/data/configs/default_gtp.cfg
 
+echo "numNNServerThreadsPerModel = $GPU_NUM" >> ./work/data/configs/default_gtp.cfg
 i=0
 while [ $i -lt $GPU_NUM ]
 do
@@ -133,5 +144,8 @@ for KATAGO_VERSION in $KATAGO_VERSIONS
 do
     mv ./resources/gomoku-$KATAGO_VERSION-$PACKAGE ./work/data/bins/gomoku-$KATAGO_VERSION
 done
+
+chmod +x ./work/*.sh
+chmod +x ./work/ikatago-server
 
 echo "Install Successfully, now you can run the ikatago-server"

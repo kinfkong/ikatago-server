@@ -11,9 +11,14 @@ require (
 	github.com/fatedier/golib v0.0.0-20181107124048-ff8cd814b049
 	github.com/gliderlabs/ssh v0.3.0
 	github.com/google/uuid v1.2.0
+	github.com/huandu/go-tls v1.0.1 // indirect
+	github.com/jaypipes/ghw v0.8.0 // indirect
+	github.com/jaypipes/pcidb v0.6.0 // indirect
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/mergermarket/go-pkcs7 v0.0.0-20170926155232-153b18ea13c9
+	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/rakyll/statik v0.1.1
+	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.7.1
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de

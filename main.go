@@ -12,13 +12,13 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jessevdk/go-flags"
-
 	"github.com/kinfkong/ikatago-server/config"
+	"github.com/kinfkong/ikatago-server/daemon"
+	"github.com/kinfkong/ikatago-server/event"
 	"github.com/kinfkong/ikatago-server/katago"
 	"github.com/kinfkong/ikatago-server/model"
 	"github.com/kinfkong/ikatago-server/nat"
 	"github.com/kinfkong/ikatago-server/platform"
-	"github.com/kinfkong/ikatago-server/report"
 	"github.com/kinfkong/ikatago-server/sshd"
 	"github.com/kinfkong/ikatago-server/storage"
 	"github.com/kinfkong/ikatago-server/utils"
@@ -28,6 +28,7 @@ var opts struct {
 	World         *string `short:"w" long:"world" description:"The world url."`
 	Platform      string  `short:"p" long:"platform" description:"The platform, like aistudio, colab" required:"true"`
 	PlatformToken string  `short:"t" long:"token" description:"The token of the platform, like aistudio, colab" required:"true"`
+	DaemonPort    *int    `long:"daemon-port" description:"The daemon port if started by daemon"`
 	ConfigFile    *string `short:"c" long:"config" description:"The config file of the server (not katago config file)" default:"./config/conf.yaml"`
 }
 
@@ -157,9 +158,27 @@ func parseArgs() {
 
 	config.GetConfig().Set("platform.name", opts.Platform)
 	config.GetConfig().Set("platform.token", opts.PlatformToken)
+	if opts.DaemonPort == nil {
+		// try to read it from env
+		portStr := os.Getenv("IKATAGO_DAEMON_PORT")
+		if portStr != "" {
+			port, err := utils.GetJSONIntNumber(portStr)
+			if err == nil {
+				opts.DaemonPort = &port
+			}
+		}
+	}
+	config.GetConfig().Set("daemon.port", opts.DaemonPort)
+
+	if os.Getenv("IKATAGO_AUTH_PUBKEY") != "" {
+		// use public key auth
+		config.GetConfig().Set("auth.publicKey", os.Getenv("IKATAGO_AUTH_PUBKEY"))
+	}
+	if os.Getenv("IKATAGO_CLUSTER_MODE") == "1" {
+		config.GetConfig().Set("clusterModeEnabled", true)
+	}
 	log.Printf("DEBUG the world is: %s\n", config.GetConfig().GetString("world.url"))
 	log.Printf("DEBUG Platform: [%s]\n", config.GetConfig().GetString("platform.name"))
-
 }
 
 func main() {
@@ -174,12 +193,21 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// check the katago manager
-	katagoManager := katago.GetManager()
-	if katagoManager == nil {
-		log.Fatal("katago config seems wrong...")
+	// check the supported engines
+	if config.GetConfig().Sub("katago") != nil {
+		engineType := "katago"
+		katagoManager := katago.GetManager(&engineType)
+		if katagoManager == nil {
+			log.Fatal("katago config seems wrong...")
+		}
 	}
-
+	if config.GetConfig().Sub("gomoku") != nil {
+		engineType := "gomoku"
+		gomokuManager := katago.GetManager(&engineType)
+		if gomokuManager == nil {
+			log.Fatal("gomoku config seems wrong...")
+		}
+	}
 	// start sshd
 	err = sshd.RunAsync()
 	if err != nil {
@@ -217,6 +245,19 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	// re-save it when frp host port changed
+	event.GetService().Subscribe(event.EventFRPPortChanged, func(host string, port int) {
+		for _, sshUser := range sshd.Users {
+			err := oss.SaveUserSSHInfo(model.SSHLoginInfo{
+				Host: host,
+				Port: port,
+				User: sshUser.Username,
+			})
+			if err != nil {
+				log.Printf("ERROR failed to save user info to oss: %+v", err)
+			}
+		}
+	})
 
 	fmt.Printf("\n\n")
 	fmt.Printf("SSH HOST: %s\n", sshInfo.Host)
@@ -224,10 +265,24 @@ func main() {
 	fmt.Printf("\n")
 
 	fmt.Printf("Congratulations! Now ikatago-server is running successfully, waiting for your requests ...\n\n")
-
+	/*go func() {
+		for {
+			cmds := utils.GetCmdManager().GetAllCmdInfo()
+			if len(cmds) > 0 {
+				for _, cmd := range cmds {
+					err := utils.GetCmdManager().KillCommand(cmd.ID)
+					if err != nil {
+						log.Printf("ERROR failed to kill commnad: %+v", err)
+					}
+				}
+			}
+			time.Sleep(time.Second)
+		}
+	}()*/
 	// start reporting
-	report.GetService().PlatformName = platform.Name
-	go report.GetService().StartReport()
+	if daemon.GetService().IsDaemonAvailable() {
+		go daemon.GetService().StartDaemonReport()
+	}
 	for {
 		// wait for the services
 		time.Sleep(1000 * time.Millisecond)
